@@ -1,0 +1,17 @@
+.tippy-tooltip.gps-theme {
+    background-color: #dd4b39 ;
+    color: white;
+  }
+
+  .tippy-tooltip.gps-theme[data-placement^='top'] .tippy-arrow {
+    border-top-color: #dd4b39;
+  }
+  .tippy-tooltip.gps-theme[data-placement^='bottom'] .tippy-arrow {
+    border-bottom-color: #dd4b39;
+  }
+  .tippy-tooltip.gps-theme[data-placement^='left'] .tippy-arrow {
+    border-left-color: #dd4b39;
+  }
+  .tippy-tooltip.gps-theme[data-placement^='right'] .tippy-arrow {
+    border-right-color: #dd4b39;
+  }

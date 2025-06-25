@@ -1,0 +1,20 @@
+@extends('layouts.assistants.app')
+
+@section('content')
+    <section class="content-header">
+      <h1>Nueva Factura</h1>
+      
+    </section>
+
+    <section class="content">
+          
+       
+           
+                @include('invoices._form')
+         
+       
+
+    </section>
+
+@endsection
+

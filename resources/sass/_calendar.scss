@@ -1,0 +1,140 @@
+
+.external-event{
+	padding: 0px 10px !important;
+	font-size:12px;
+	width: 130px;
+	white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fc-event:hover {
+  border-color: white !important;
+}
+
+
+.fc-nonbusiness {
+    background-color: #a9a9a9 !important;
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.fc-event{
+	  .fc-title{
+		display:none !important;
+	  }
+	}
+
+.medico-calendar .fc-bgevent-container .fc-bgevent{
+	opacity: .5;
+}
+#miniCalendar .fc-center h2{
+	font-size: 16px;
+	font-weight: bold;
+}
+#miniCalendar .appointment-details{
+	bottom: 0;
+}
+.calendar-popup #calendar .fc-center h2{
+	font-size: 12px;
+}
+.calendar-popup #miniCalendar .fc-toolbar{
+	background-color: #374850;
+	color: white;
+}
+
+
+@media screen and (min-width:640px){
+	.fc-event{
+	  .fc-title{
+		display:inline-block !important;
+	  }
+	}
+	.title-bg-event{
+		display:inline-block;
+		max-width: 160px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		
+	}
+	.medico-calendar .fc-bgevent-container .fc-bgevent .title-bg-event{
+		display:inline-block;
+		font-size: 13px;
+		top: 45%;
+		position: absolute;
+		transform: rotate(90deg) ;
+		
+		color: #000;
+	}
+}
+#calendar .fc-center h2{
+	font-size:22px;
+}
+#calendar .fc-toolbar{
+	background-color: #374850;
+	color:white;
+}
+#calendar .fc-today, .calendar-medic-day .fc-today {
+  background: white !important;
+}
+.calendar-medic-day{
+	h2{
+		font-size: 1.8rem;
+	}
+}
+.box-body #calendar{
+	margin-top: 0 !important;
+}
+
+.closeon{
+	position: absolute;
+    right: 5px;
+    top: 3px;
+    z-index: 100;
+    cursor:pointer;
+    
+}
+.closeon:hover{
+    color:black;
+ }
+
+.appointment-details, .schedule-details{
+	position: absolute;
+	right: 0;
+	left: 0;
+	bottom: 8px;
+	top:0;
+	z-index: 90;
+	cursor:pointer;
+}
+.schedule-details{
+	bottom: 0;
+}
+.fc-bgevent{
+	color: #fff;
+	.appointment-details{
+		bottom: 0;
+	}
+}
+.activesHistory{
+	margin-right:2px;
+}
+.fc-bgevent{
+	h3{
+		color:white;
+		text-shadow:1px 1px 2px rgba(0,0,0,.8);
+		font-size: 1.5rem;
+		text-align:center;
+	}
+	.closeon{
+		color:white;
+	}
+}
+.btn-close-cita{
+	display: none;
+}
+.patient-calendar{
+	.fc-nonbusiness{
+		background-color: transparent !important;
+	}
+}

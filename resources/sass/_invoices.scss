@@ -1,0 +1,99 @@
+.invoice-form{
+	position: relative;
+}
+.invoice-info{
+	.invoice-col{
+		text-align: center;
+	}
+}
+.invoice-patient{
+	.invoice-left{
+		text-align: left;
+	}
+	.invoice-right{
+		text-align: right;
+	}
+}
+
+.invoice-number{
+	// margin-top: 1rem;
+	// border: 2px solid #000;
+	// border-radius: 15px;
+	// padding: .5rem;
+	// max-width: 200px;
+	// display: inline-block;
+	// margin-bottom: .5rem;
+	h3{
+		margin-bottom: 0;
+		margin-top: 0;
+	}
+	h4{
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+}
+.invoice{
+	.logo{
+		background-position: center center;
+		background-size: contain;
+		background-repeat: no-repeat;
+		height: 90px;
+		text-align:center;
+		display: inline-block;
+		vertical-align: middle;
+		img{
+			height: 100%;
+		}
+	}
+	.info-clinic{
+		display: inline-block;
+		vertical-align: middle;
+	}
+	h2{
+		margin-top: 0;
+	}
+	hr{
+		border-top: 1px solid #c3c3c3;
+	}
+}
+
+.invoice-pending{
+	animation: pulseColor 1s ease infinite;
+	color:white;
+	a{
+		color:white;
+	}
+}
+
+@-moz-keyframes pulseColor {
+  0%, 100% {
+    background-color: rgba(238,64,53,0.8);
+  }
+  50% {
+    background-color: #E98A7F;
+  }
+}
+@-webkit-keyframes pulseColor {
+  0%, 100% {
+    background-color: rgba(238,64,53,0.8);
+  }
+  50% {
+    background-color: #E98A7F;
+  }
+}
+@-o-keyframes pulseColor {
+  0%, 100% {
+    background-color: rgba(238,64,53,0.8);
+  }
+  50% {
+    background-color: #E98A7F;
+  }
+}
+@keyframes pulseColor {
+  0%, 100% {
+    background-color: rgba(238,64,53,0.8);
+  }
+  50% {
+    background-color: #E98A7F;
+  }
+}

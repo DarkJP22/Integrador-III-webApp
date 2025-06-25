@@ -1,0 +1,55 @@
+@extends('layouts.login')
+
+@section('content')
+    <div class="login-box-body">
+        <p class="login-box-msg"></p>
+
+        <form role="form" method="POST" action="{{ url('/login') }}">
+            {{ csrf_field() }}
+            <div class="form-group has-feedback">
+
+                <input id="email" type="email" class="form-control" name="email" value="{{ old('email') }}" required autofocus placeholder="Email">
+                @if ($errors->has('email'))
+                    <span class="help-block">
+                    <strong>{{ $errors->first('email') }}</strong>
+                </span>
+                @endif
+                <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+            </div>
+            <div class="form-group has-feedback">
+                <input id="password" type="password" class="form-control" name="password" required placeholder="Contraseña">
+                @if ($errors->has('password'))
+                    <span class="help-block">
+                    <strong>{{ $errors->first('password') }}</strong>
+                </span>
+                @endif
+                <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+            </div>
+            <div class="row">
+                <div class="col-xs-8">
+                    <div class="checkbox icheck">
+                        <label>
+                            <input type="checkbox" name="remember"> Recuerdame
+                        </label>
+                    </div>
+                </div>
+                <!-- /.col -->
+                <div class="col-xs-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-flat">Iniciar</button>
+                </div>
+                <!-- /.col -->
+            </div>
+        </form>
+
+        <!-- /.social-auth-links -->
+{{--        <p>Si aún no tiene cuenta puedes descargar la aplicación en </p>--}}
+        <div class="tw-flex tw-gap-2 tw-mb-4">
+
+{{--            <a href="{{ url('/register') }}" class=" btn btn-secondary "><b>Crear cuenta</b> </a>--}}
+{{--            <a href="{{ url('/medic/register') }}" class=" btn btn-danger "><b>Crear cuenta médico</b> </a>--}}
+        </div>
+        <a href="{{ url('/password/reset') }}">Olvidaste tu contraseña?</a><br>
+
+
+    </div>
+@endsection

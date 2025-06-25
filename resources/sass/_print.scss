@@ -1,0 +1,12 @@
+@media print {
+    .notification-app, .main-footer{
+        display: none;
+    }
+    .show-print{
+        display: block !important;
+    }
+    
+}
+.show-print{
+    display: none;
+}

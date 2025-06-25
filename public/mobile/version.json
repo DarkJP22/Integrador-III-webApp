@@ -1,0 +1,24 @@
+{
+    "version": "2.0.2",
+    "enabled": true,
+    "maintenance": false,
+    "maintenanceMsg": "We are in maintenance. sorry for the inconvenience",
+    "major":{
+        "title": "App update available",
+        "msg": "Please update your app to the latest version to continue using it.",
+        "btn": "Download"
+
+    },
+    "minor":{
+        "title": "App update available",
+        "msg": "There is a new version available, would you like to get it now?",
+        "btn": "Download"
+
+    },
+    "urls":{
+    	"android": "https://play.google.com/store/apps/details?id=com.avotz.gpsmedica",
+    	"ios": "https://apps.apple.com/us/app/gpsmedica/id1601473815" 
+    }
+    
+
+}

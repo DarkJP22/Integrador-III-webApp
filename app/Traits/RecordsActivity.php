@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Traits;
+
+use App\Record;
+use App\User;
+use Illuminate\Support\Arr;
+
+trait RecordsActivity
+{
+    /**
+     * The project's old attributes.
+     *
+     * @var array
+     */
+    public $oldAttributes = [];
+
+    /**
+     * Boot the trait.
+     */
+    public static function bootRecordsActivity()
+    {
+        foreach (self::recordableEvents() as $event) {
+            static::$event(function ($model) use ($event) {
+                $model->recordActivity($model->activityDescription($event));
+            });
+
+            if ($event === 'updated') {
+                static::updating(function ($model) {
+                    $model->oldAttributes = $model->getOriginal();
+                });
+            }
+        }
+    }
+
+    /**
+     * Get the description of the activity.
+     *
+     * @param  string $description
+     * @return string
+     */
+    protected function activityDescription($description)
+    {
+        return "{$description}_" . strtolower(class_basename($this));
+    }
+
+    /**
+     * Fetch the model events that should trigger activity.
+     *
+     * @return array
+     */
+    protected static function recordableEvents()
+    {
+        if (isset(static::$recordableEvents)) {
+            return static::$recordableEvents;
+        }
+
+        return ['created', 'updated'];
+    }
+
+    /**
+     * Record activity for a project.
+     *
+     * @param string $description
+     */
+    public function recordActivity($description)
+    {
+        if(!auth()->user()){
+            return;
+        }
+        
+        if (get_class($this) === User::class && auth()->user()->id === $this->id) {  // prevent foreign key exception
+            return;
+        }
+
+        $this->record()->create([
+            'user_id' => auth()->user()->id,
+            'description' => $description,
+            'changes' => $this->activityChanges()
+        ]);
+    }
+
+    /**
+     * The activity feed for the project.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     */
+    public function record()
+    {
+        return $this->morphMany(Record::class, 'subject')->latest();
+    }
+
+    /**
+     * Fetch the changes to the model.
+     *
+     * @return array|null
+     */
+    protected function activityChanges()
+    {
+        if ($this->wasChanged()) {
+            return [
+                'before' => Arr::except(
+                    array_diff($this->oldAttributes, $this->getAttributes()), 'updated_at'
+                ),
+                'after' => Arr::except(
+                    $this->getChanges(), 'updated_at'
+                )
+            ];
+        }
+    }
+}

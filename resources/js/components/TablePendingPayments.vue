@@ -1,0 +1,77 @@
+<template>
+  <div>
+
+    <table class="table table-bordered">
+      <tbody>
+        <tr>
+
+          <th class="text-center">Monto</th>
+          <th class="text-center">Periodo</th>
+          <th class="text-center">Acción</th>
+
+        </tr>
+
+
+        <tr v-for="payment in monthlyCharges" :key="payment.id">
+
+          <td>${{ money(payment.amount) }}</td>
+          <td>
+            {{ (payment.type == 'MS') ? payment.period_from +' -- '+ payment.period_to : payment.month + '-' + payment.year }}</td>
+          <td>
+
+            <a :href="getUrl(payment)" class="btn btn-primary">{{ (payment.type == 'MS') ? 'Renovar' : 'Pagar' }}</a>
+            <a href="#" data-toggle="modal" data-target="#modalSubscriptionChange" class="btn btn-danger" v-if="payment.type == 'MS'">Cambiar Plan</a>
+          </td>
+
+        </tr>
+
+        <tr v-if="monthlyCharges.length > 1">
+
+          <td colspan="3"> <a href="/medic/payments/create" class="btn btn-primary">Pagar Todo</a></td>
+
+        </tr>
+
+
+      </tbody>
+    </table>
+
+
+
+  </div>
+</template>
+
+<script>
+
+
+
+export default {
+
+    props: ['monthlyCharges'],
+
+    data() {
+        return {
+            loader: false,
+
+        };
+    },
+
+    methods: {
+        getUrl(payment) {
+
+            return '/medic/payments/' + payment.id + '/create';
+
+        },
+
+        money(n) {
+            return n.toLocaleString();//toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+        },
+
+    }, //methods
+
+    created() {
+        console.log('Component ready. Modal Appointments');
+
+
+    }
+};
+</script>

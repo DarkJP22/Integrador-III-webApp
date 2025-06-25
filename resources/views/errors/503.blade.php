@@ -1,0 +1,21 @@
+<!doctype html>
+<title>Site Maintenance</title>
+<style>
+    body { text-align: center; padding: 1rem; }
+    h1 { font-size: 50px; }
+    body { font: 20px Helvetica, sans-serif; color: #333; }
+    article { display: block; text-align: left; max-width: 650px; margin: 0 auto; }
+    a { color: #14B0A5; text-decoration: none; }
+    a:hover { color: #333; text-decoration: none; }
+    @media screen and (min-width: 768px) {
+        body { padding: 15rem; }
+    }
+</style>
+
+<article>
+    <h1>We&rsquo;ll be back soon!</h1>
+    <div>
+        <p>Sorry for the inconvenience but we&rsquo;re performing some maintenance at the moment. We&rsquo;ll be back online shortly!</p>
+        <p>&mdash; Doctor Blue Team</p>
+    </div>
+</article>

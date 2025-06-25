@@ -1,0 +1,1 @@
+window.provincias = require('./ubicaciones');
