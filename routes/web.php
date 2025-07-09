@@ -654,6 +654,15 @@ Route::delete('/pharmacy/media/{media}', 'Pharmacy\MediaController@destroy');
 Route::get('/pharmacy/media/videos', 'Pharmacy\MediaController@media');
 Route::post('/patients/media', 'PatientMediaController@store');
 
+//famacias ordenes
+use App\Http\Controllers\Pharmacy\Orders_Pharmacy\WEB\OrdersController;
+
+Route::prefix('pharmacy')->group(function () {
+    Route::resource('orders', OrdersController::class)->names('pharmacy.orders');
+});
+
+
+
 //admins
 Route::get('/admin/register-authorization-codes', 'Admin\UserController@authorizationCodes');
 Route::post('/admin/register-authorization-codes', 'Admin\UserController@generateAuthorizationCode');

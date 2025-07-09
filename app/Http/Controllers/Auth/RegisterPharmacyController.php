@@ -205,6 +205,7 @@ class RegisterPharmacyController extends Controller
         ]);
 
         $data = request()->all();
+        $data['user_id'] = auth()->user()->id;
         $data['active'] = 1;
         $data['verified'] = 1;
         $data['notification'] = 1;
