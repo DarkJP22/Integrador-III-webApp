@@ -159,3 +159,6 @@ Route::get('/social-stories', 'Api\SocialStoryController@index')->middleware('au
 Route::get('/social-posts', 'Api\SocialPostController@index')->middleware('auth:api');
 Route::delete('/medic/{user}/social-posts/{socialImage}', 'Api\MedicSocialPostController@destroy')->middleware('auth:api');
 Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')->middleware('auth:api');
+
+//Hola 123 probando que monton
+//Hola 123 probando que monton 2
