@@ -71,6 +71,7 @@ class DatabaseSeeder extends Seeder
             'api_token' => Str::random(50),
             'remember_token' => Str::random(10),
         ]);
+        
         $admin2 = User::factory()->create([
             'name' => 'admin Julio',
             'email' => 'info@cittacr.com',
