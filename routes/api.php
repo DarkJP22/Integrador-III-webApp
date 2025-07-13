@@ -162,3 +162,7 @@ Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')-
 
 
 //Prueba git
+
+// Pharmacies
+Route::get('/pharmacies', 'Api\PharmacyController@index');//->middleware('auth:api');
+
