@@ -152,15 +152,25 @@
                 @if($order->payment_method == 1)
                 <div class="row">
                     <div class="form-group col-md-12">
-                        <label>Referencia SINPE</label>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="text" class="form-control" style="flex: 1;" value="{{ $order->sinpe_reference ?? 'No disponible' }}" readonly>
-                            @if($order->payment_receipt)
-                            <a href="{{ asset('storage/' . $order->payment_receipt) }}" target="_blank" class="btn btn-info btn-sm">Ver Comprobante</a>
-                            @else
-                            <span class="text-muted">Sin comprobante</span>
-                            @endif
+                        <label>Comprobante de Pago SINPE</label>
+                        @if($order->voucher)
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background-color: #f9f9f9; border-radius: 4px; border: 1px solid #ddd;">
+                            <i class="fa fa-file-image-o text-success" style="font-size: 18px;"></i>
+                            <div style="flex: 1;">
+                                <strong>Comprobante subido por el usuario</strong>
+                                <br><small class="text-muted">{{ basename($order->voucher) }}</small>
+                            </div>
+                            <a href="{{ asset('storage/' . $order->voucher) }}" target="_blank" class="btn btn-success btn-sm">
+                                <i class="fa fa-eye"></i> Ver Comprobante
+                            </a>
                         </div>
+                        @else
+                        <div style="padding: 15px; background-color: #fcf8e3; border: 1px solid #faebcc; border-radius: 4px; color: #8a6d3b;">
+                            <i class="fa fa-exclamation-triangle"></i>
+                            <strong>Sin comprobante</strong>
+                            <br><small>El usuario aún no ha subido el comprobante de pago desde la app móvil.</small>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -389,7 +399,7 @@
             const cantidadParaCalculo = Math.min(cantidadSolicitada, cantidadDisponible);
 
             const subtotal = cantidadParaCalculo * precio;
-            filaSubtotalInput.value = `₡${subtotal.toFixed(2)}`;
+            filaSubtotalInput.value = formatCurrency(subtotal);
             return subtotal;
         }
 

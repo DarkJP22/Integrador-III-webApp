@@ -9,15 +9,22 @@
     <div class="row">
         <div class="col-xs-12">
             <div class="box">
+
                 <div class="box-header">
+
                     <form action="{{ route('pharmacy.orders.index') }}" method="GET" autocomplete="off">
-                        <div class="form-group row">
-                            <div class="col-sm-4">
-                                <input type="text" name="q" class="form-control" placeholder="Buscar por consecutivo, estado o usuario..." value="{{ request('q') }}">
+                        <div class="col-sm-3">
+
+                            <div class="input-group input-group">
+
+                                <input type="text" name="q" class="form-control pull-right" 
+                                    placeholder="Buscar por consecutivo, estado o usuario..." value="{{ request('q') }}">
+                                <div class="input-group-btn">
+                                    <button type="submit" class="btn btn-default"><i class="fa fa-search"></i></button>
+                                </div>
+
                             </div>
-                            <div class="col-sm-2">
-                                <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Buscar</button>
-                            </div>
+
                         </div>
                     </form>
                 </div>

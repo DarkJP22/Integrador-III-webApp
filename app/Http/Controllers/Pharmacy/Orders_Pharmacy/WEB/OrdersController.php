@@ -75,7 +75,7 @@ class OrdersController extends Controller
      
     public function create()
     {
-        // Las órdenes normalmente se crean desde la app móvil/web del usuario
+        // Las órdenes se crean desde la app móvil
         return view('pharmacy.requests-orders.create');
     }
     */
@@ -134,7 +134,7 @@ class OrdersController extends Controller
     public function update(Request $request, Orders $order)
     {
         $validated = $request->validate([
-            'status' => 'required|string|max:50',
+            'status' => 'required|in:cotizacion,esperando_confirmacion,confirmado,preparando,cancelado,despachado',
             'shipping_cost' => 'nullable|numeric|min:0',
             'details' => 'array',
             'details.*.quantity_available' => 'required|numeric|min:0',
