@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\AffiliationUsersController;    
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -162,3 +162,11 @@ Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')-
 
 //Hola 123 probando que monton
 //Hola 123 probando que monton 2
+//Afiliaciones de usuarios
+Route::get('affiliation-users', 'Api\AffiliationUsersController@index')->middleware('auth:api');
+
+Route::post('affiliation-users', 'Api\AffiliationUsersController@store')->middleware('auth:api');
+
+Route::put('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@update')->middleware('auth:api');
+
+Route::delete('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@destroy')->middleware('auth:api');

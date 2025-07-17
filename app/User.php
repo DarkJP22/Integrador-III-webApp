@@ -808,4 +808,8 @@ class User extends Authenticatable
             set: fn ($value) => strtoupper($value),
         );
     }
+    public function affiliationUsers(): HasMany
+    {
+        return $this->hasMany(AffiliationUsers::class, 'user_id');
+    }
 }
