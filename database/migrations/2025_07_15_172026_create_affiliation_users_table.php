@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->timestamp('date');
             $table->boolean('active')->default(false);
-            $table->integer('type_affiliation')->default(1);
-            $table->binary('voucher')->nullable(false);
+            $table->integer('type_affiliation')->default(1);    
+            $table->text('voucher')->nullable(false);
             $table->timestamps();
         });
     }

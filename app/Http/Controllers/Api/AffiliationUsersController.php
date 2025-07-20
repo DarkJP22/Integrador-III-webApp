@@ -25,11 +25,18 @@ class AffiliationUsersController extends Controller
     {
         $validated = $request->validate([
             'date' => 'required|date',
-            'active' => 'boolean',
             'type_affiliation' => 'required|integer',
-            'voucher' => 'required',
+            'voucher' => 'required|file|mimes:jpg,jpeg,png,pdf',
         ]);
         $validated['user_id'] = auth()->id();
+        $validated['active'] = $request->input('active', false); 
+        if ($request->hasFile('voucher')) {
+            // Guarda en storage/app/public/vouchers
+            $path = $request->file('voucher')->store('vouchers', 'public');
+            $validated['voucher'] = $path;
+        } else {
+            $validated['voucher'] = null; 
+        }
         $AffiliationUsers = AffiliationUsers::create($validated);
 
         if ($request->wantsJson()) {
@@ -47,9 +54,15 @@ class AffiliationUsersController extends Controller
             'date' => 'required|date',
             'active' => 'boolean',
             'type_affiliation' => 'required|integer',
-            'voucher' => 'required',
+            'voucher' => 'required|file|mimes:jpg,jpeg,png,pdf',
         ]);
 
+   if ($request->hasFile('voucher')) {
+        // Guarda en storage/app/public/vouchers
+        $path = $request->file('voucher')->store('vouchers', 'public');
+        $validated['voucher'] = $path;
+       
+    }
         $affiliationUsers->fill($validated);
         $affiliationUsers->save();
 
@@ -72,5 +85,10 @@ class AffiliationUsersController extends Controller
         }
         return response()->json(['message' => 'Usuario de afiliación eliminado correctamente'], 200);
     }
-}
 
+    // Mostrar un usuario de afiliación específico
+    public function show(AffiliationUsers $affiliationUsers)
+    {
+        return response()->json($affiliationUsers);
+    }
+}

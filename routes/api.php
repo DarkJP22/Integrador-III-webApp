@@ -170,3 +170,4 @@ Route::post('affiliation-users', 'Api\AffiliationUsersController@store')->middle
 Route::put('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@update')->middleware('auth:api');
 
 Route::delete('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@destroy')->middleware('auth:api');
+Route::get('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@show')->middleware('auth:api');
