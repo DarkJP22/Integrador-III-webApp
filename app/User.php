@@ -813,4 +813,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Pharmacy::class, 'user_id', 'id');
     }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Orders::class);
+    }
 }

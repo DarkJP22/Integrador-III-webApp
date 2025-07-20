@@ -166,3 +166,19 @@ Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')-
 // Pharmacies
 Route::get('/pharmacies', 'Api\PharmacyController@index');//->middleware('auth:api');
 
+// Drugs (Catálogo de medicamentos)
+Route::get('/drugs', 'Api\DrugController@index');//->middleware('auth:api');
+Route::get('/drugs/search', 'Api\DrugController@search');//->middleware('auth:api');
+Route::get('/drugs/presentations', 'Api\DrugController@presentations');//->middleware('auth:api');
+Route::get('/drugs/{drug}', 'Api\DrugController@show');//->middleware('auth:api');
+
+// Orders (Órdenes de medicamentos)
+Route::get('/orders', 'Api\OrderController@index');//->middleware('auth:api');
+Route::post('/orders', 'Api\OrderController@store');//->middleware('auth:api');
+Route::get('/orders/{order}', 'Api\OrderController@show');//->middleware('auth:api');
+Route::put('/orders/{order}', 'Api\OrderController@update');//->middleware('auth:api');
+Route::delete('/orders/{order}', 'Api\OrderController@destroy');//->middleware('auth:api');
+
+// Orders by pharmacy and user
+Route::get('/pharmacies/{pharmacy}/orders', 'Api\OrderController@getByPharmacy');//->middleware('auth:api');
+Route::get('/users/{user}/orders', 'Api\OrderController@getByUser');//->middleware('auth:api');

@@ -88,4 +88,9 @@ class Pharmacy extends Model
     {
         return $this->hasOne(Pharmacredential::class);
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Orders::class);
+    }
 }
