@@ -160,6 +160,7 @@ Route::get('/social-posts', 'Api\SocialPostController@index')->middleware('auth:
 Route::delete('/medic/{user}/social-posts/{socialImage}', 'Api\MedicSocialPostController@destroy')->middleware('auth:api');
 Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')->middleware('auth:api');
 
+
 //Hola 123 probando que monton
 //Hola 123 probando que monton 2
 //Afiliaciones de usuarios
@@ -171,3 +172,10 @@ Route::put('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersControll
 
 Route::delete('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@destroy')->middleware('auth:api');
 Route::get('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@show')->middleware('auth:api');
+
+
+//Prueba git
+
+// Pharmacies
+Route::get('/pharmacies', 'Api\PharmacyController@index');//->middleware('auth:api');
+

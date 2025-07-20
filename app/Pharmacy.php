@@ -11,7 +11,23 @@ class Pharmacy extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name','address','province','canton','district','city','phone','ide','ide_name','lat','lon','address_map','notification','notification_date','active', 'logo_path'
+        'name',
+        'address',
+        'province',
+        'canton',
+        'district',
+        'city',
+        'phone',
+        'ide',
+        'ide_name',
+        'lat',
+        'lon',
+        'address_map',
+        'notification',
+        'notification_date',
+        'active',
+        'logo_path',
+        'user_id'
     ];
 
     protected $appends = ['notification_datetime', 'notification_hour', 'name_address', 'provinceName'];
@@ -53,10 +69,9 @@ class Pharmacy extends Model
     }
     public function assistants()
     {
-        return $this->users()->whereHas('roles', function ($query){
-                        $query->where('name',  'asistente');
-                          
-                    })->where('active', 1)->get();
+        return $this->users()->whereHas('roles', function ($query) {
+            $query->where('name',  'asistente');
+        })->where('active', 1)->get();
     }
 
     public function medicineRemiders()
