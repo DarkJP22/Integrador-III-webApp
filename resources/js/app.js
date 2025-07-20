@@ -170,10 +170,11 @@ import PatientClinicHistory from './components/PatientClinicHistory.vue';
 import NewProduct from './components/NewProduct.vue';
 import LabVisits from './components/LabVisits.vue';
 import SubscriptionInvoices from './components/SubscriptionInvoices.vue';
-import PlanSelection from '@/components/PlanSelection.vue';
-import CurrentSubscription from '@/components/CurrentSubscription.vue';
-import BadgeNotifications from '@/components/BadgeNotifications.vue';
-import LabAppointmentRequestForm from '@/components/LabAppointmentRequestForm.vue';
+import PlanSelection from './components/PlanSelection.vue';
+import CurrentSubscription from './components/CurrentSubscription.vue';
+import BadgeNotifications from './components/BadgeNotifications.vue';
+import OrderBadgeNotifications from './components/OrderBadgeNotifications.vue';
+import LabAppointmentRequestForm from './components/LabAppointmentRequestForm.vue';
 // eslint-disable-next-line no-unused-vars
 
 const emitter = mitt();
@@ -294,6 +295,7 @@ app.component('PlanSelection', PlanSelection);
 app.component('CurrentSubscription', CurrentSubscription);
 app.component('LabExamsSettings', LabExamsSettings);
 app.component('BadgeNotifications', BadgeNotifications);
+app.component('OrderBadgeNotifications', OrderBadgeNotifications);
 app.component('LabAppointmentRequestForm', LabAppointmentRequestForm);
 
 app.mount('#app');

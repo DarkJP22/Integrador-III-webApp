@@ -25,7 +25,7 @@
                     @if($notification === 'subscription')
                         <div class="swiper-slide notification-app-item">
                             Tienes facturas pendientes de pago <a href="{{ url('/pharmacy/profiles?tab=payments') }}"
-                                                                  class="btn btn-secondary btn-sm">Ver Detalles</a>
+                                                                class="btn btn-secondary btn-sm">Ver Detalles</a>
 
                         </div>
                     @endif

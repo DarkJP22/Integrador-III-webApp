@@ -655,13 +655,11 @@ Route::get('/pharmacy/media/videos', 'Pharmacy\MediaController@media');
 Route::post('/patients/media', 'PatientMediaController@store');
 
 //famacias ordenes
-use App\Http\Controllers\Pharmacy\Orders_Pharmacy\WEB\OrdersController;
+use App\Http\Controllers\Pharmacy\Orders_Pharmacy\OrdersController;
 
 Route::prefix('pharmacy')->group(function () {
     Route::resource('orders', OrdersController::class)->names('pharmacy.orders');
 });
-
-
 
 //admins
 Route::get('/admin/register-authorization-codes', 'Admin\UserController@authorizationCodes');

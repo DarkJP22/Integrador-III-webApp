@@ -1,13 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Pharmacy\Orders_Pharmacy\WEB;
+namespace App\Http\Controllers\Pharmacy\Orders_Pharmacy;
 
 use App\Http\Controllers\Controller;
+use App\Notifications\NewOrderPharmacie;
 use App\Orders;
 use App\OrderDetail;
+use App\Pharmacy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrdersController extends Controller
 {
@@ -16,7 +19,8 @@ class OrdersController extends Controller
      */
     private function validatePharmacyAccess(Orders $order = null)
     {
-        $pharmacyId = Auth::user()->pharmacy->id ?? null;
+        $pharmacy = Auth::user()->pharmacies->first();
+        $pharmacyId = $pharmacy ? $pharmacy->id : null;
 
         if (!$pharmacyId) {
             abort(403, 'No tienes una farmacia asociada.');
@@ -72,17 +76,16 @@ class OrdersController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     
+     */
     public function create()
     {
-        // Las órdenes se crean desde la app móvil
+        // Las órdenes se crean desde la app móvil, pero activamos para pruebas
         return view('pharmacy.requests-orders.create');
     }
-    */
 
     /**
      * Store a newly created resource in storage.
-     
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -97,13 +100,48 @@ class OrdersController extends Controller
             'lat' => 'nullable|numeric',
             'lot' => 'nullable|numeric',
             'order_total' => 'required|numeric',
-            'shipping_total' => 'nullable|numeric',
+            'shipping_total' => 'required|numeric',
+            'shipping_cost' => 'nullable|numeric',
+            'voucher' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        Orders::create($validated);
-        return redirect()->route('pharmacy.orders.index')->with('success', 'Orden creada.');
+        // Manejar subida de voucher/comprobante
+        if ($request->hasFile('voucher')) {
+            $file = $request->file('voucher');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/vouchers', $fileName);
+            $validated['voucher'] = 'vouchers/' . $fileName;
+        }
+
+        $order = Orders::create($validated);
+
+
+        // Crear detalles de la orden si existen
+        if ($request->has('details')) {
+            foreach ($request->input('details') as $detail) {
+                if (!empty($detail['drug_id']) && !empty($detail['requested_amount'])) {
+                    OrderDetail::create([
+                        'order_id' => $order->id,
+                        'drug_id' => $detail['drug_id'],
+                        'requested_amount' => $detail['requested_amount'],
+                        'quantity_available' => $detail['quantity_available'] ?? 0,
+                        'unit_price' => $detail['unit_price'] ?? 0,
+                        'products_total' => ($detail['quantity_available'] ?? 0) * ($detail['unit_price'] ?? 0),
+                    ]);
+                }
+            }
+        }
+
+        // Notificar a todos los usuarios de la farmacia sobre la nueva orden
+        $pharmacy = Pharmacy::with('users')->find($validated['pharmacy_id']);
+        if ($pharmacy && $pharmacy->users->count() > 0) {
+            foreach ($pharmacy->users as $pharmacyUser) {
+                $pharmacyUser->notify(new NewOrderPharmacie($order));
+            }
+        }
+
+        return redirect()->route('pharmacy.orders.create')->with('success', 'Orden creada exitosamente.');
     }
-    */
 
     /**
      * Display the specified resource.
@@ -113,7 +151,7 @@ class OrdersController extends Controller
 
         return view('pharmacy.requests-orders.show', compact('order'));
     }
-    */
+     */
 
     /**
      * Show the form for editing the specified resource.
@@ -191,7 +229,7 @@ class OrdersController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     
+     */
     public function destroy(Orders $order)
     {
         $this->validatePharmacyAccess($order);
@@ -199,5 +237,4 @@ class OrdersController extends Controller
         $order->delete();
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden eliminada.');
     }
-    */
 }

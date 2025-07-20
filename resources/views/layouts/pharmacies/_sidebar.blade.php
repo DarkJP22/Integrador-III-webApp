@@ -18,24 +18,26 @@
         <ul class="sidebar-menu" data-widget="tree">
             <li class="header">MENU</li>
             <li><a href="{{ url('/')}}"><i class="fa fa-home"></i> <span>Home</span></a></li>
-            {{--            <li>--}}
-            {{--                <a href="{{ url('/lab/appointment-requests/register?pharmacy_code=' . auth()->user()->pharmacies?->first()?->id) }}"--}}
-            {{--                   target="_blank"><i--}}
-            {{--                            class="fa fa-home"></i> <span>Solicitud de cita</span></a></li>--}}
-            {{--            <li><a href="{{ url('/pharmacy/medics')}}"><i class="fa fa-user-md"></i> <span>Médicos</span></a></li>--}}
+            {{-- <li>--}}
+            {{-- <a href="{{ url('/lab/appointment-requests/register?pharmacy_code=' . auth()->user()->pharmacies?->first()?->id) }}"--}}
+            {{-- target="_blank"><i--}}
+            {{-- class="fa fa-home"></i> <span>Solicitud de cita</span></a></li>--}}
+            {{-- <li><a href="{{ url('/pharmacy/medics')}}"><i class="fa fa-user-md"></i> <span>Médicos</span></a></li>--}}
             <li><a href="{{ url('/pharmacy/medicines/reminders')}}"><i class="fa fa-medkit"></i> <span>Encargos</span></a></li>
             <li><a href="{{ url('/pharmacy/patients')}}"><i class="fa fa-users"></i> <span>Pacientes</span></a></li>
             <li><a href="{{ url('/pharmacy/marketing')}}"><i class="fa fa-users"></i> <span>Marketing</span></a></li>
-            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span></a></li> <!--ruta de proformas/ordenes-->
+            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span></a> <OrderBadgeNotifications type="NewOrderPharmacie"></OrderBadgeNotifications></li> <!--ruta de proformas/ordenes-->
+
+            <!--ruta de proformas/ordenes-->
             <li><a href="{{ url('/pharmacy/media')}}"><i class="fa fa-play"></i> <span>Biblioteca Educativa</span></a></li>
-            
+
 
             {{-- @if(auth()->user()->subscription && !auth()->user()->subscription->cost > 0)
             <li><a href="{{ url('/pharmacy/changeaccounttype')}}"><i class="fa fa-money"></i>
-                <span>Punto de venta</span>
-                <span class="pull-right-container">
-                    <small class="label pull-right bg-red">Obtener</small>
-                </span>
+            <span>Punto de venta</span>
+            <span class="pull-right-container">
+                <small class="label pull-right bg-red">Obtener</small>
+            </span>
 
 
             </a></li>
