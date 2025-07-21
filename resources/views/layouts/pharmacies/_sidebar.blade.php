@@ -26,7 +26,7 @@
             <li><a href="{{ url('/pharmacy/medicines/reminders')}}"><i class="fa fa-medkit"></i> <span>Encargos</span></a></li>
             <li><a href="{{ url('/pharmacy/patients')}}"><i class="fa fa-users"></i> <span>Pacientes</span></a></li>
             <li><a href="{{ url('/pharmacy/marketing')}}"><i class="fa fa-users"></i> <span>Marketing</span></a></li>
-            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span></a> <OrderBadgeNotifications type="NewOrderPharmacie"></OrderBadgeNotifications></li> <!--ruta de proformas/ordenes-->
+            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span><order-badge-Notifications type="NewOrderPharmacie"></order-badge-Notifications></a></li> <!--ruta de proformas/ordenes-->
 
             <!--ruta de proformas/ordenes-->
             <li><a href="{{ url('/pharmacy/media')}}"><i class="fa fa-play"></i> <span>Biblioteca Educativa</span></a></li>

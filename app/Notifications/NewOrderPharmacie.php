@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrderPharmacie extends Notification implements ShouldBroadcast
+class NewOrderPharmacie extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -40,7 +40,7 @@ class NewOrderPharmacie extends Notification implements ShouldBroadcast
      *
      * @param  mixed  $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
-     */
+     
     public function toMail($notifiable)
     {
         return (new MailMessage)
@@ -48,7 +48,7 @@ class NewOrderPharmacie extends Notification implements ShouldBroadcast
                     ->action('Ver orden', url('/pharmacy/orders'))
                     ->line('Gracias por usar nuestra aplicación!');
     }
-
+    */
     /**
      * Get the array representation of the notification.
      *
