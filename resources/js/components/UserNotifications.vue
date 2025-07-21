@@ -32,9 +32,10 @@ export default {
     methods: {
         markAsRead(notification) {
             axios.delete('/profiles/' + window.App.user.id + '/notifications/' + notification.id);
-            if (notification.data?.link) {
+            if (notification.data?.url) {
+                window.location.href = notification.data.url;
+            } else if (notification.data?.link) {
                 window.location.href = notification.data.link;
-
             }
         },
 

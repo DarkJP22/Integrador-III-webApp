@@ -60,7 +60,7 @@ class NewOrderPharmacie extends Notification implements ShouldQueue
         return [
             'order_id' => $this->order->id,
             'message' => 'Nueva orden recibida',
-            'url' => '/pharmacy/orders'
+            'url' => route('pharmacy.orders.index')
         ];
     }
 
@@ -75,7 +75,7 @@ class NewOrderPharmacie extends Notification implements ShouldQueue
         return [
             'order_id' => $this->order->id,
             'message' => 'Nueva orden recibida',
-            'url' => '/pharmacy/orders'
+            'url' => route('pharmacy.orders.index')
         ];
     }
 }
