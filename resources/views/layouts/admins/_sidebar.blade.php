@@ -23,11 +23,12 @@
             <li><a href="{{ url('/admin/clinics/requests')}}"><i class="fa fa-home"></i> <span>Integraciones de clínicas</span></a></li>
             <li><a href="{{ url('/admin/clinics/admins/requests')}}"><i class="fa fa-user"></i> <span>Solicitudes de clínica</span></a></li>
             <li><a href="{{ url('/admin/medics/requests')}}"><i class="fa fa-user-md"></i> <span>Solicitudes de médicos</span></a></li>
+            <li><a href="{{ url('admin/affiliations/request/affiliate')}}"><i class="fa fa-user-md"></i> <span>Solicitudes de Afiliados</span></a></li>
             <li><a href="{{ url('/mediatags')}}"><i class="fa fa-tag"></i> <span>Etiquetas (Multimedia)</span></a></li>
             <li><a href="{{ url('/taxes')}}"><i class="fa fa-money"></i> <span>Impuestos</span></a></li>
             <li><a href="{{ url('/drugs')}}"><i class="fa fa-heart-o"></i> <span>Medicamentos</span></a></li>
             <li><a href="{{ url('/admin/discounts')}}"><i class="fa fa-money"></i> <span>Descuentos para Usuarios GPS</span></a></li>
-
+    
 
             <li class="treeview">
                 <a href="#"><i class="fa fa-table"></i> <span>Reportes</span> <span class="pull-right-container">

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Affiliation;
 use Illuminate\Http\Request;
 use App\AffiliationUsers;
-use App\Users;
+use App\User;
 use App\Http\Controllers\Controller;
+
+use function Illuminate\Log\log;
 
 class AffiliationUsersController extends Controller
 {
@@ -87,8 +90,21 @@ class AffiliationUsersController extends Controller
     }
 
     // Mostrar un usuario de afiliación específico
-    public function show(AffiliationUsers $affiliationUsers)
-    {
-        return response()->json($affiliationUsers);
+   public function checkUserAffiliation($userId)
+{
+    // Buscar afiliaciones activas del usuario
+    $activeAffiliation = AffiliationUsers::where('user_id', $userId)
+        ->where('active', true)
+        ->first();
+
+    if ($activeAffiliation) {
+        return  affiliationUsers::where('user_id', $userId)
+            ->where('active', true)
+            ->first();
+    } else {
+        return Affiliation::where('user_id', $userId)
+            ->where('active', false)
+            ->first();
     }
+}
 }

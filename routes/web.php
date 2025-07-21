@@ -717,6 +717,10 @@ foreach (['active', 'inactive'] as $key) {
         'uses' => 'Admin\UserController@'.$key,
     ]);
 }
+//request for affiliation
+Route::get('admin/affiliations/request/affiliate', 'Admin\AffiliationRequestController@index');
+
+
 Route::put('/admin/users/{user}/changeaccountcentromedico', 'Admin\UserController@changeAccountCentroMedico');
 Route::delete('/admin/users/{user}/cancel-account', 'Admin\UserController@cancelAccount');
 
@@ -846,4 +850,5 @@ Route::post('/password/reset', 'Auth\ResetPasswordController@reset');
 
 Route::get('/download-data/{user}', 'UserDownloadDataController@show')->name('user.download-data.show')->middleware('signed');
 Route::post('/download-data/{user}', 'UserDownloadDataController@download')->name('user.download-data.download');
+
 

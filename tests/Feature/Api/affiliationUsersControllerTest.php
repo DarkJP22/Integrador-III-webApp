@@ -81,4 +81,14 @@ class AffiliationUserTest extends TestCase
         $response->assertStatus(204);
         $this->assertDatabaseMissing('affiliation_users', ['id' => $affiliationUser->id]);
     }
+    #[Test]
+    public function usuario_autenticado_api_puede_buscar_afiliacion()
+    {
+        $affiliationUser = AffiliationUsers::factory()->create();
+
+        $response = $this->actingAs($this->user, 'api')->getJson("/api/affiliation-users/{$affiliationUser->id}");
+
+        $response->assertStatus(200)
+                 ->assertJsonStructure(['data']);
+    }
 }
