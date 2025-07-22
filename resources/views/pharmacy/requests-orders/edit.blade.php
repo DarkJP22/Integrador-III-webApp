@@ -130,12 +130,11 @@
                     <div class="form-group col-md-6">
                         <label>Estado</label>
                         <select name="status" class="form-control @error('status') is-invalid @enderror">
-                            <option value="cotizacion" {{ $order->status == 'cotizacion' ? 'selected' : '' }}>Cotización</option>
-                            <option value="esperando_confirmacion" {{ $order->status == 'esperando_confirmacion' ? 'selected' : '' }}>Esperando Confirmación</option>
-                            <option value="confirmado" {{ $order->status == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
-                            <option value="preparando" {{ $order->status == 'preparando' ? 'selected' : '' }}>Preparando</option>
-                            <option value="cancelado" {{ $order->status == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
-                            <option value="despachado" {{ $order->status == 'despachado' ? 'selected' : '' }}>Despachado</option>
+                            @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}" {{ (($order->status->value ?? $order->status) == $value) ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                            @endforeach
                         </select>
                         @error('status')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -144,12 +143,12 @@
 
                     <div class="form-group col-md-6">
                         <label>Método de Pago</label>
-                        <input type="text" class="form-control" value="{{ $order->payment_method == 0 ? 'Efectivo' : 'SINPE' }}" readonly>
-                        <input type="hidden" name="payment_method" value="{{ $order->payment_method }}">
+                        <input type="text" class="form-control" value="{{ $order->payment_method_text }}" readonly>
+                        <input type="hidden" name="payment_method" value="{{ $order->payment_method->value ?? $order->payment_method }}">
                     </div>
                 </div>
 
-                @if($order->payment_method == 1)
+                @if($order->isElectronicPayment())
                 <div class="row">
                     <div class="form-group col-md-12">
                         <label>Comprobante de Pago SINPE</label>
@@ -178,14 +177,14 @@
                 <div class="row">
                     <div class="form-group col-md-6">
                         <label>¿Requiere envío?</label>
-                        <input type="text" class="form-control" value="{{ $order->requires_shipping ? 'Sí' : 'No' }}" readonly>
-                        <input type="hidden" name="requires_shipping" value="{{ $order->requires_shipping }}">
+                        <input type="text" class="form-control" value="{{ $order->requiresShipping() ? 'Sí' : 'No' }}" readonly>
+                        <input type="hidden" name="requires_shipping" value="{{ $order->requires_shipping->value ?? $order->requires_shipping }}">
                     </div>
                 </div>
             </div>
         </div>
 
-        @if($order->requires_shipping)
+        @if($order->requiresShipping())
         <div class="box box-info" style="margin-top: 20px;">
             <div class="box-header with-border">
                 <h3 class="box-title">Información de Envío</h3>
@@ -322,7 +321,7 @@
                         @enderror
                     </div>
 
-                    @if($order->requires_shipping)
+                    @if($order->requiresShipping())
                     <div class="form-group col-md-6">
                         <label><strong>Total Final con Envío</strong></label>
                         <div class="input-group">

@@ -2,6 +2,9 @@
 
 namespace App;
 
+use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\ShippingRequired;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,8 +30,9 @@ class Orders extends Model
 
     protected $casts = [
         'date' => 'datetime',
-        'payment_method' => 'boolean',
-        'requires_shipping' => 'boolean',
+        'status' => OrderStatus::class,
+        'payment_method' => PaymentMethod::class,
+        'requires_shipping' => ShippingRequired::class,
         'order_total' => 'decimal:2',
         'shipping_total' => 'decimal:2',
         'lat' => 'decimal:8',
@@ -59,21 +63,12 @@ class Orders extends Model
 
     public function getPaymentMethodTextAttribute()
     {
-        return $this->payment_method ? 'SINPE' : 'Efectivo';
+        return $this->payment_method->label();
     }
 
     public function getStatusTextAttribute()
     {
-        $statuses = [
-            'cotizacion' => 'Cotización',
-            'esperando_confirmacion' => 'Esperando Confirmación',
-            'confirmado' => 'Confirmado',
-            'preparando' => 'Preparando',
-            'cancelado' => 'Cancelado',
-            'despachado' => 'Despachado',
-        ];
-
-        return $statuses[$this->status] ?? ucfirst($this->status);
+        return $this->status->label();
     }
 
     // Scopes
@@ -84,6 +79,23 @@ class Orders extends Model
 
     public function scopeByStatus($query, $status)
     {
+        if ($status instanceof OrderStatus) {
+            return $query->where('status', $status->value);
+        }
+        
         return $query->where('status', $status);
+    }
+
+    // Métodos de conveniencia para trabajar con Enums
+
+    // Método para verificar si el método de pago es electrónico
+    public function isElectronicPayment(): bool
+    {
+        return $this->payment_method->isElectronic();
+    }
+    // Método para verificar si el pedido requiere envío
+    public function requiresShipping(): bool
+    {
+        return $this->requires_shipping->requiresShipping();
     }
 }

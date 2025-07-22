@@ -146,12 +146,11 @@
                     <div class="form-group col-md-6">
                         <label>Estado</label>
                         <select name="status" class="form-control @error('status') is-invalid @enderror" required>
-                            <option value="cotizacion" {{ old('status') == 'cotizacion' ? 'selected' : '' }}>Cotización</option>
-                            <option value="esperando_confirmacion" {{ old('status') == 'esperando_confirmacion' ? 'selected' : '' }}>Esperando Confirmación</option>
-                            <option value="confirmado" {{ old('status') == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
-                            <option value="preparando" {{ old('status') == 'preparando' ? 'selected' : '' }}>Preparando</option>
-                            <option value="cancelado" {{ old('status') == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
-                            <option value="despachado" {{ old('status') == 'despachado' ? 'selected' : '' }}>Despachado</option>
+                            @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}" {{ old('status') == $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                            @endforeach
                         </select>
                         @error('status')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -161,8 +160,11 @@
                     <div class="form-group col-md-6">
                         <label>Método de Pago</label>
                         <select name="payment_method" class="form-control @error('payment_method') is-invalid @enderror" required onchange="toggleVoucherSection()">
-                            <option value="0" {{ old('payment_method') == '0' ? 'selected' : '' }}>Efectivo</option>
-                            <option value="1" {{ old('payment_method') == '1' ? 'selected' : '' }}>SINPE</option>
+                            @foreach($paymentMethodOptions as $value => $label)
+                            <option value="{{ $value }}" {{ old('payment_method') == $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                            @endforeach
                         </select>
                         @error('payment_method')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -192,8 +194,11 @@
                     <div class="form-group col-md-6">
                         <label>¿Requiere envío?</label>
                         <select name="requires_shipping" class="form-control @error('requires_shipping') is-invalid @enderror" required onchange="toggleShippingSection()">
-                            <option value="0" {{ old('requires_shipping') == '0' ? 'selected' : '' }}>No</option>
-                            <option value="1" {{ old('requires_shipping') == '1' ? 'selected' : '' }}>Sí</option>
+                            @foreach($shippingRequiredOptions as $value => $label)
+                            <option value="{{ $value }}" {{ old('requires_shipping') == $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                            @endforeach
                         </select>
                         @error('requires_shipping')
                         <div class="invalid-feedback">{{ $message }}</div>

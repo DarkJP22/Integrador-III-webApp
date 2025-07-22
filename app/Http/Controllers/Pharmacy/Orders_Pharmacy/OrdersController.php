@@ -7,6 +7,9 @@ use App\Notifications\NewOrderPharmacie;
 use App\Orders;
 use App\OrderDetail;
 use App\Pharmacy;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\ShippingRequired;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,16 +43,21 @@ class OrdersController extends Controller
         // Validar acceso y obtener farmacia
         $pharmacyId = $this->validatePharmacyAccess();
 
+        // Marcar las notificaciones de nuevas órdenes como leídas
+        // cuando el usuario entre a la vista de órdenes
+        Auth::user()->unreadNotifications()
+            ->where('type', 'App\Notifications\NewOrderPharmacie')
+            ->update(['read_at' => now()]);
+
         // Construir query con filtros
         $query = Orders::with(['user', 'pharmacy'])
             ->where('pharmacy_id', $pharmacyId);
 
-        // Filtro de búsqueda
+        // Filtro de búsqueda general (nombre de usuario)
         if ($request->filled('q')) {
             $search = $request->get('q');
             $query->where(function ($q) use ($search) {
                 $q->where('consecutive', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
@@ -57,9 +65,21 @@ class OrdersController extends Controller
             });
         }
 
-        // Filtro por estado
-        if ($request->filled('status')) {
+        // Filtro por estado usando Enum
+        if ($request->filled('status') && $request->get('status') !== '') {
             $query->where('status', $request->get('status'));
+        }
+
+        // Filtro por método de pago usando Enum
+        if ($request->filled('payment_method') && is_array($request->get('payment_method'))) {
+            $paymentMethods = $request->get('payment_method');
+            $query->whereIn('payment_method', $paymentMethods);
+        }
+
+        // Filtro por requerimiento de envío usando Enum
+        if ($request->filled('requires_shipping') && is_array($request->get('requires_shipping'))) {
+            $shippingRequirements = $request->get('requires_shipping');
+            $query->whereIn('requires_shipping', $shippingRequirements);
         }
 
         // Obtener órdenes paginadas - más recientes primero (por ID descendente)
@@ -71,7 +91,17 @@ class OrdersController extends Controller
             return $order;
         });
 
-        return view('pharmacy.requests-orders.index', compact('orders'));
+        // Pasar los Enums a la vista para generar las opciones
+        $statusOptions = OrderStatus::getOptions();
+        $paymentMethodOptions = PaymentMethod::getOptions();
+        $shippingRequiredOptions = ShippingRequired::getOptions();
+
+        return view('pharmacy.requests-orders.index', compact(
+            'orders', 
+            'statusOptions', 
+            'paymentMethodOptions', 
+            'shippingRequiredOptions'
+        ));
     }
 
     /**
@@ -79,8 +109,16 @@ class OrdersController extends Controller
      */
     public function create()
     {
-        // Las órdenes se crean desde la app móvil, pero activamos para pruebas
-        return view('pharmacy.requests-orders.create');
+        // Pasar opciones de Enums para los selects
+        $statusOptions = OrderStatus::getOptions();
+        $paymentMethodOptions = PaymentMethod::getOptions();
+        $shippingRequiredOptions = ShippingRequired::getOptions();
+
+        return view('pharmacy.requests-orders.create', compact(
+            'statusOptions',
+            'paymentMethodOptions', 
+            'shippingRequiredOptions'
+        ));
     }
 
     /**
@@ -163,7 +201,17 @@ class OrdersController extends Controller
         // Cargar detalles de la orden y el medicamento relacionado
         $order->load('details.drug');
 
-        return view('pharmacy.requests-orders.edit', compact('order'));
+        // Pasar opciones de Enums para los selects
+        $statusOptions = OrderStatus::getOptions();
+        $paymentMethodOptions = PaymentMethod::getOptions();
+        $shippingRequiredOptions = ShippingRequired::getOptions();
+
+        return view('pharmacy.requests-orders.edit', compact(
+            'order',
+            'statusOptions',
+            'paymentMethodOptions', 
+            'shippingRequiredOptions'
+        ));
     }
 
     /**
@@ -172,7 +220,7 @@ class OrdersController extends Controller
     public function update(Request $request, Orders $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:cotizacion,esperando_confirmacion,confirmado,preparando,cancelado,despachado',
+            'status' => 'required|in:' . implode(',', array_keys(OrderStatus::getOptions())),
             'shipping_cost' => 'nullable|numeric|min:0',
             'details' => 'array',
             'details.*.quantity_available' => 'required|numeric|min:0',
