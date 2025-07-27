@@ -41,11 +41,11 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if(!empty($affiliation->active))
-                                                <span class="label label-success">Activo</span>
-                                            @else
-                                                <span class="label label-danger">Inactivo</span>
-                                            @endif
+                                           @if ($affiliation->active)
+                                               <button type="submit" class="btn btn-success btn-xs" form="form-update" formaction="{!! URL::route('requestAffiliation.inactive', [$affiliation->id]) !!}">Active</button>
+                                           @else
+                                               <button type="submit"  class="btn btn-danger btn-xs " form="form-update" formaction="{!! URL::route('requestAffiliation.active', [$affiliation->id]) !!}" >Inactive</button>
+                                           @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -60,6 +60,12 @@
         </div>
     </div>
 </section>
+<form method="post" id="form-update" data-confirm="Estas Seguro?">
+  <input name="_method" type="hidden" value="POST">{{ csrf_field() }}
+</form>
+<form method="post" id="form-active-inactive">
+ {{ csrf_field() }}
+</form>
 @endsection
 
 @push('scripts')

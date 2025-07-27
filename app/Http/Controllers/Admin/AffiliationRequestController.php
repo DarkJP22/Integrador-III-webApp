@@ -14,145 +14,86 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AffiliationRequestController extends Controller
 {
-    public function __construct() {
-
-        $this->middleware('auth');
-        $this->client = new Client([
-            'timeout' => 60,
-        ]);
-
-       
-    }
-    /**
-   
-     */
+    
+    //Obtener las solicitudes de afiliacion
+    
    public function index()
 {
 
-    // Solo trae registros donde active sea false (0)
-    $affiliationUsers = AffiliationUsers::all();
+    $affiliationUsers = AffiliationUsers::where('active', 0)->get();
 
     return view('admin.affiliation.index', compact('affiliationUsers'));
 }
 
 
-    /**
-     * Active a user.
-     *
-     * @param  int $id
-     *
-     * @return Response
-     */
-    public function active($id)
-    {
-        $requestOffice = RequestOffice::find($id);
+public function active($id)
+{
+    $requestaffiliation = AffiliationUsers::find($id);
 
-        if ($requestOffice) {
+    if ($requestaffiliation) {
 
-            $requestOffice->status = 1;
-            $requestOffice->save();
+        $requestaffiliation->active = 1;
+        $requestaffiliation->save();
+        //Esto se dejará documentado para futuras modificaciones grupo G1
+/*
+        if ($requestaffiliation->user->push_token) {
 
-            if ($requestOffice->user->push_token) {
+            $url = config('services.onesignal.url_api');
+            $headers = [
+                'Authorization' => 'Basic ' . config('services.onesignal.api_key'),
+                'Content-Type' => 'application/json'
+            ];
 
-                $url = config('services.onesignal.url_api');
-                $headers = [
-                    'Authorization' => 'Basic ' . config('services.onesignal.api_key'), //env('API_KEY_ONESIGNAL_MEDICS'),
-                    'Content-Type' => 'application/json'
-                ];
-                $content = 'Ya puedes agregar la clinica ' . $requestOffice->name . ' a tu perfil para programar y recibir citas';
-                $title = 'La integracion de la clinica ha sido realizada';
-                $data = [
-                    'app_id' => config('services.onesignal.app_id'),
-                    'include_player_ids' => array(
-                        $requestOffice->user->push_token
-                    ),
-                    'contents' => [
-                        'en' => $content,
-                        'es' => $content
-                    ],
-                    'headings' => [
-                        'en' => $title,
-                        'es' => $title
-                    ],
-                    'data' => [
-                        'type' => 'appointment',
-                        'title' => $title,
-                        'body' => $content,
-                        'url' => '/notifications'
-    
-                    ]
-                ];
-                
-    
-                try {
-                    $response = $this->client->request('POST', $url, ['headers' => $headers, 'json' => $data]);
-                    $body = $response->getBody();
-                    $content = $body->getContents();
-                    $result = json_decode($content);
-    
-                    \Log::info('Mensaje Push OneSignal Http: ' . json_encode($result));
-    
-                } catch (\GuzzleHttp\Exception\ClientException $e) {
-                    //return \GuzzleHttp\Psr7\Message::toString($e->getResponse());
-                    \Log::info('Error Mensaje Push OneSignal Http: ' . \GuzzleHttp\Psr7\Message::toString($e->getResponse()));
-    
-    
-                }
-               
-            }
+            
+            $content = 'Tu solicitud de afiliación ha sido aprobada. Ahora puedes acceder a tu cuenta y comenzar a disfrutar los beneficios.';
+            $title = '¡Afiliación aprobada con éxito!';
 
-
+            $data = [
+                'app_id' => config('services.onesignal.app_id'),
+                'include_player_ids' => array(
+                    $requestaffiliation->user->push_token
+                ),
+                'contents' => [
+                    'en' => $content,
+                    'es' => $content
+                ],
+                'headings' => [
+                    'en' => $title,
+                    'es' => $title
+                ],
+                'data' => [
+                    'type' => 'affiliation',
+                    'title' => $title,
+                    'body' => $content,
+                    'url' => '/notifications'
+                ]
+            ];
 
             try {
+                $response = $this->client->request('POST', $url, ['headers' => $headers, 'json' => $data]);
+                $body = $response->getBody();
+                $content = $body->getContents();
+                $result = json_decode($content);
 
-                $requestOffice->user->notify(new ClinicIntegrated($requestOffice));
+                \Log::info('Mensaje Push OneSignal Http: ' . json_encode($result));
 
-
-            } catch (TransportExceptionInterface $e)  //Swift_RfcComplianceException
-            {
-                \Log::error($e->getMessage());
-            }    
-            
-
-           
-
-
-
-
+            } catch (\GuzzleHttp\Exception\ClientException $e) {
+                \Log::info('Error Mensaje Push OneSignal Http: ' . \GuzzleHttp\Psr7\Message::toString($e->getResponse()));
+            }
         }
 
-
-        return back();
+        try {
+            $requestaffiliation->user->notify(new ClinicIntegrated($requestaffiliation)); 
+        } catch (TransportExceptionInterface $e) {
+            \Log::error($e->getMessage());
+        }
     }
-
-    /**
-     * Inactive a user.
-     *
-     * @param  int $id
-     *
-     * @return Response
-     */
-    public function inactive($id)
-    {
-        $requestOffice = \DB::table('request_offices')
-            ->where('id', $id)
-            ->update(['status' => 0]);
-
-        return back();
+*/
     }
-
-    /**
-     * Eliminar consulta(cita)
-     */
-    public function destroy($id)
-    {
-        $requestOffice = RequestOffice::find($id);
-
-        $requestOffice = $requestOffice->delete();
-
-        return back();
-    }
-
+    return back();
+  
+}
 
 
 }
+
