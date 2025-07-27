@@ -31,21 +31,19 @@ class CreatePharmaciesTable extends Migration
             $table->string('address_map')->nullable();
             $table->string('logo_path')->nullable();
             $table->tinyInteger('active')->default(0);
-        
+
 
             $table->timestamps();
         });
 
-         Schema::create('pharmacy_user', function (Blueprint $table) {
-    
+        Schema::create('pharmacy_user', function (Blueprint $table) {
+
             $table->integer('pharmacy_id')->unsigned()->index();
             $table->integer('user_id')->unsigned()->index();
             $table->primary(['pharmacy_id', 'user_id']);
-
-           
         });
 
-          Schema::create('assistants_pharmacies', function (Blueprint $table) {
+        Schema::create('assistants_pharmacies', function (Blueprint $table) {
             $table->integer('assistant_id')->unsigned();
             $table->integer('pharmacy_id')->unsigned();
 
@@ -54,8 +52,6 @@ class CreatePharmaciesTable extends Migration
 
             $table->primary(['pharmacy_id', 'assistant_id']);
         });
-
-
     }
 
     /**

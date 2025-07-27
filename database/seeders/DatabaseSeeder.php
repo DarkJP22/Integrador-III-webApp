@@ -15,7 +15,6 @@ use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-   
     /**
      * Run the database seeds.
      *
@@ -129,7 +128,6 @@ class DatabaseSeeder extends Seeder
             'symbol' => '$', // secret
             'exchange' => 589, // secret
             'exchange_venta' => 569,
-           
         ]);
         
         Tax::factory()->create();
@@ -148,6 +146,8 @@ class DatabaseSeeder extends Seeder
             'tarifa' => 0,
             'CodigoTarifa' => '01'
         ]);
+
+        $this->call(OrdersTableSeeder::class);
     }
 
     private function cleanDatabase(): void

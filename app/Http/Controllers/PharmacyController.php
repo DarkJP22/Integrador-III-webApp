@@ -18,6 +18,11 @@ class PharmacyController extends Controller
         $this->pharmacyRepo = $pharmacyRepo;
     }
 
+    /**
+     * Display a listing of all pharmacies.
+     *
+     * @return \Illuminate\Http\Response
+     */
 
     public function update(Pharmacy $pharmacy)
     {
