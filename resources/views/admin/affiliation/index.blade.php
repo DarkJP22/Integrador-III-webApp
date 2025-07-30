@@ -21,6 +21,7 @@
                                     <th>ID</th>
                                     <th>Usuario ID</th>
                                     <th>Fecha</th>
+                                    <th>Descuento</th>
                                     <th>Tipo de Afiliación</th>
                                     <th>Voucher</th>
                                     <th>Estado</th>
@@ -31,7 +32,8 @@
                                     <tr>
                                         <td>{{ $affiliation->id ?? '' }}</td>
                                         <td>{{ $affiliation->user_id ?? '' }}</td>
-                                        <td>{{ $affiliation->date ?? '' }}</td>
+                                        <td>{{ $affiliation->created_at ?? '' }}</td>
+                                         <td>{{ $affiliation->discount ?? '' }}%</td>
                                         <td>{{ $affiliation->type_affiliation ?? '' }}</td>
                                         <td>
                                             @if(!empty($affiliation->voucher))

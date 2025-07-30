@@ -15,9 +15,9 @@ return new class extends Migration
             $table->increments('id');
             $table->unsignedInteger('user_id')->index();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->timestamp('date');
+            $table->integer('discount');
             $table->boolean('active')->default(false);
-            $table->integer('type_affiliation')->default(1);    
+            $table->enum('type_affiliation', ['Basic', 'Standard', 'Premium'])->default('Basic');
             $table->text('voucher')->nullable(false);
             $table->timestamps();
         });

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use Illuminate\Validation\Rule;
 use App\Affiliation;
 use Illuminate\Http\Request;
 use App\AffiliationUsers;
@@ -27,12 +27,18 @@ class AffiliationUsersController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'date' => 'required|date',
-            'type_affiliation' => 'required|integer',
+            'type_affiliation' => ['required', Rule::in(['Basic', 'Standard', 'Premium'])],
             'voucher' => 'required|file|mimes:jpg,jpeg,png,pdf',
         ]);
         $validated['user_id'] = auth()->id();
-        $validated['active'] = $request->input('active', false); 
+        $validated['active'] = $request->input('active', false);
+        if ($validated['type_affiliation'] === 'Basic') {
+            $validated['discount'] = 5; // Descuento del 5% para afiliación básica
+        } elseif ($validated['type_affiliation'] === 'Standard') {
+            $validated['discount'] = 10; // Descuento del 10% para afiliación estándar
+        } elseif ($validated['type_affiliation'] === 'Premium') {
+            $validated['discount'] = 15; // Descuento del 15% para afiliación premium
+        }
         if ($request->hasFile('voucher')) {
             // Guarda en storage/app/public/vouchers
             $path = $request->file('voucher')->store('vouchers', 'public');
@@ -54,9 +60,8 @@ class AffiliationUsersController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'date' => 'required|date',
             'active' => 'boolean',
-            'type_affiliation' => 'required|integer',
+            'type_affiliation' => 'required|enum:Basic,Standard,Premium',
             'voucher' => 'required|file|mimes:jpg,jpeg,png,pdf',
         ]);
 
@@ -89,7 +94,6 @@ class AffiliationUsersController extends Controller
         return response()->json(['message' => 'Usuario de afiliación eliminado correctamente'], 200);
     }
 
-    // Mostrar un usuario de afiliación específico
    public function checkUserAffiliation($userId)
 {
     // Buscar afiliaciones activas del usuario
@@ -102,7 +106,7 @@ class AffiliationUsersController extends Controller
             ->where('active', true)
             ->first();
     } else {
-        return Affiliation::where('user_id', $userId)
+        return AffiliationUsers::where('user_id', $userId)
             ->where('active', false)
             ->first();
     }

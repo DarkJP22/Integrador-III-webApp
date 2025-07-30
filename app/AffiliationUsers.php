@@ -16,6 +16,9 @@ class AffiliationUsers extends Model
         'active',
         'type_affiliation',
         'voucher',
+        "created_at",
+        "updated_at",
+        'discount'
     ];
     
     public function user()
