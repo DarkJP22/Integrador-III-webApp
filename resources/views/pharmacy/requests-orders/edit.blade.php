@@ -190,31 +190,12 @@
                             <a href="{{ asset('storage/' . $order->voucher) }}" target="_blank" class="btn btn-info btn-sm">
                                 <i class="fa fa-eye"></i> Ver Comprobante
                             </a>
-                            @if($order->status->value === 'confirmado')
-                                <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline; margin-left: 10px;">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Confirmar el pago y comenzar preparación?')">
-                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
-                                    </button>
-                                </form>
-                            @endif
                         </div>
                         @else
                         <div style="padding: 15px; background-color: #fcf8e3; border: 1px solid #faebcc; border-radius: 4px; color: #8a6d3b;">
                             <i class="fa fa-exclamation-triangle"></i>
                             <strong>Sin comprobante</strong>
                             <br><small>El usuario aún no ha subido el comprobante de pago desde la app móvil.</small>
-                            @if($order->status->value === 'confirmado')
-                                <br><br>
-                                <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('¿Confirmar pago efectivo y comenzar preparación?')">
-                                        <i class="fa fa-money"></i> Confirmar Pago Efectivo
-                                    </button>
-                                </form>
-                            @endif
                         </div>
                         @endif
                     </div>
@@ -226,14 +207,6 @@
                             <i class="fa fa-money text-success"></i>
                             <strong>Pago en Efectivo</strong>
                             <br><small>El usuario pagará en efectivo al recibir la orden.</small>
-                            <br><br>
-                            <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Confirmar y comenzar preparación?')">
-                                    <i class="fa fa-check-circle"></i> Confirmar y Preparar
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -412,7 +385,30 @@
                             <button type="button" class="btn btn-success btn-lg" onclick="respondQuote()">
                                 <i class="fa fa-paper-plane"></i> Responder Cotización
                             </button>
+                        @elseif($order->status->value === 'confirmado')
+                            {{-- Botón de Confirmar y Preparar fuera del formulario --}}
+                            </form>
+                            <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
+                                @csrf
+                                @method('PUT')
+                                @if($order->isElectronicPayment() && $order->voucher)
+                                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('⚠️ IMPORTANTE: Antes de continuar, asegúrese de haber revisado el comprobante de pago.\n\n¿Confirmar el pago y cambiar el estado a Preparando?')">
+                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
+                                    </button>
+                                @elseif($order->isElectronicPayment() && !$order->voucher)
+                                    <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('¿Confirmar como pago efectivo y cambiar el estado a Preparando?')">
+                                        <i class="fa fa-money"></i> Confirmar Pago Efectivo
+                                    </button>
+                                @else
+                                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('¿Confirmar y cambiar el estado a Preparando?')">
+                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
+                                    </button>
+                                @endif
+                            </form>
+                            <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST" style="display: none;">
                         @elseif($order->status->value === 'preparando')
+                            {{-- Botón de Marcar como Despachada fuera del formulario --}}
+                            </form>
                             <form action="{{ route('pharmacy.orders.mark-dispatched', $order) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('PUT')
@@ -420,7 +416,8 @@
                                     <i class="fa fa-truck"></i> Marcar como Despachada
                                 </button>
                             </form>
-                        @elseif(in_array($order->status->value, ['esperando_confirmacion', 'confirmado', 'despachado', 'cancelado']))
+                            <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST" style="display: none;">
+                        @elseif(in_array($order->status->value, ['esperando_confirmacion', 'despachado', 'cancelado']))
                             <button type="submit" class="btn btn-default" onclick="return confirm('¿Está seguro de actualizar esta orden?')">
                                 <i class="fa fa-save"></i> Guardar Cambios
                             </button>
@@ -434,6 +431,7 @@
             </div>
         </div>
     </form>
+
 </section>
 @endsection
 
