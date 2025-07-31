@@ -156,7 +156,7 @@
 
                 <div class="row">
                     <div class="form-group col-md-6">
-                        <label>Estado</label>
+                        <label>Estado editable a manualmente</label>
                         <select name="status" class="form-control @error('status') is-invalid @enderror">
                             @foreach($statusOptions as $value => $label)
                             <option value="{{ $value }}" {{ (($order->status->value ?? $order->status) == $value) ? 'selected' : '' }}>
@@ -263,7 +263,8 @@
                                 <th>Cant. Solicitada</th>
                                 <th>Cant. Disponible</th>
                                 <th>Precio Unitario (₡)</th>
-                                <th>SubTotal (₡)</th>
+                                <th>IVA (%)</th>
+                                <th>SubTotal + IVA (₡)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -301,17 +302,26 @@
                                     @enderror
                                 </td>
                                 <td>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" min="0" max="100"
+                                            name="details[{{ $detail->id }}][iva_percentage]"
+                                            class="form-control iva-percentage @error('details.' . $detail->id . '.iva_percentage') is-invalid @enderror"
+                                            value="{{ old('details.' . $detail->id . '.iva_percentage', 13) }}"
+                                            placeholder="13">
+                                        <span class="input-group-addon">%</span>
+                                    </div>
+                                    @error('details.' . $detail->id . '.iva_percentage')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </td>
+                                <td>
                                     <input type="text" class="form-control subtotal" style="background-color: #f4f4f4;"
-                                        value="₡{{ number_format(
-                                    ($detail->requested_amount > $detail->quantity_available 
-                                        ? $detail->quantity_available 
-                                           : $detail->requested_amount) * $detail->unit_price, 2
-                                ) }}" readonly>
+                                        value="₡0.00" readonly>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted" style="padding: 30px;">
+                                <td colspan="7" class="text-center text-muted" style="padding: 30px;">
                                     <i class="fa fa-info-circle"></i> Esta orden no tiene productos asociados.
                                 </td>
                             </tr>
@@ -328,16 +338,24 @@
             </div>
             <div class="box-body">
                 <div class="row">
-                    <div class="form-group col-md-6">
-                        <label>SubTotal de Productos</label>
+                    <div class="form-group col-md-4">
+                        <label>SubTotal de Productos (Sin IVA)</label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
-                            <input type="number" name="products_total" id="products_total" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
+                            <input type="number" name="products_subtotal" id="products_subtotal" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
                         </div>
                     </div>
 
-                    <div class="form-group col-md-6">
-                        <label>Total de Orden + IVA (13%)</label>
+                    <div class="form-group col-md-4">
+                        <label>Total IVA</label>
+                        <div class="input-group">
+                            <span class="input-group-addon">₡</span>
+                            <input type="number" name="total_iva" id="total_iva" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Total de Productos (Con IVA)</label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
                             <input type="number" name="order_total" id="order_total" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
@@ -441,8 +459,8 @@
         const shippingInput = document.getElementById('shipping_cost');
         const shippingTotalInput = document.getElementById('shipping_total');
         const orderTotalInput = document.getElementById('order_total');
-        const subtotalInput = document.getElementById('products_total');
-        const IVA_RATE = 0.13; // 13% IVA
+        const subtotalInput = document.getElementById('products_subtotal');
+        const totalIvaInput = document.getElementById('total_iva');
 
         function formatCurrency(amount) {
             return new Intl.NumberFormat('es-CR', {
@@ -455,10 +473,11 @@
         function calcularFila(fila) {
             const cantidadInput = fila.querySelector('.quantity');
             const precioInput = fila.querySelector('.price');
+            const ivaInput = fila.querySelector('.iva-percentage');
             const filaSubtotalInput = fila.querySelector('.subtotal');
 
-            if (!cantidadInput || !precioInput || !filaSubtotalInput) {
-                return 0;
+            if (!cantidadInput || !precioInput || !ivaInput || !filaSubtotalInput) {
+                return { subtotal: 0, iva: 0, total: 0 };
             }
 
             // Obtener la cantidad solicitada desde la celda correspondiente
@@ -469,6 +488,7 @@
 
             const cantidadDisponible = parseFloat(cantidadInput.value) || 0;
             const precio = parseFloat(precioInput.value) || 0;
+            const ivaPercentage = parseFloat(ivaInput.value) || 0;
 
             // Validar que la cantidad disponible no exceda la solicitada
             if (cantidadDisponible > cantidadSolicitada) {
@@ -481,42 +501,63 @@
             // Si cantidad solicitada <= disponible, usar solicitada
             const cantidadParaCalculo = Math.min(cantidadSolicitada, cantidadDisponible);
 
-            const subtotal = cantidadParaCalculo * precio;
-            filaSubtotalInput.value = formatCurrency(subtotal);
-            return subtotal;
+            // Calcular subtotal sin IVA
+            const subtotalSinIva = cantidadParaCalculo * precio;
+            
+            // Calcular IVA individual para este producto
+            const ivaAmount = subtotalSinIva * (ivaPercentage / 100);
+            
+            // Total con IVA para este producto
+            const totalConIva = subtotalSinIva + ivaAmount;
+
+            // Mostrar el total con IVA en la celda
+            filaSubtotalInput.value = formatCurrency(totalConIva);
+            
+            return { 
+                subtotal: subtotalSinIva, 
+                iva: ivaAmount, 
+                total: totalConIva 
+            };
         }
 
         function calcularTotales() {
             let subtotalGeneral = 0;
+            let totalIvaGeneral = 0;
+            let totalConIvaGeneral = 0;
 
             document.querySelectorAll('tbody tr').forEach(fila => {
                 const cantidadInput = fila.querySelector('.quantity');
                 const precioInput = fila.querySelector('.price');
+                const ivaInput = fila.querySelector('.iva-percentage');
 
-                if (cantidadInput && precioInput) {
-                    subtotalGeneral += calcularFila(fila);
+                if (cantidadInput && precioInput && ivaInput) {
+                    const resultado = calcularFila(fila);
+                    subtotalGeneral += resultado.subtotal;
+                    totalIvaGeneral += resultado.iva;
+                    totalConIvaGeneral += resultado.total;
                 }
             });
 
-            const totalConIVA = subtotalGeneral * (1 + IVA_RATE);
             const shipping = parseFloat(shippingInput?.value) || 0;
-            const totalFinal = totalConIVA + shipping;
+            const totalFinal = totalConIvaGeneral + shipping;
 
             // Actualizar campos
             if (subtotalInput) subtotalInput.value = subtotalGeneral.toFixed(2);
-            if (orderTotalInput) orderTotalInput.value = totalConIVA.toFixed(2);
+            if (totalIvaInput) totalIvaInput.value = totalIvaGeneral.toFixed(2);
+            if (orderTotalInput) orderTotalInput.value = totalConIvaGeneral.toFixed(2);
             if (shippingTotalInput) shippingTotalInput.value = totalFinal.toFixed(2);
 
             // Actualizar badges de estado
-            updateTotalBadges(subtotalGeneral, totalConIVA, totalFinal);
+            updateTotalBadges(subtotalGeneral, totalIvaGeneral, totalConIvaGeneral, totalFinal);
         }
 
-        function updateTotalBadges(subtotal, totalIVA, totalFinal) {
-            // Puedes añadir badges o indicadores visuales aquí
+        function updateTotalBadges(subtotal, totalIVA, totalConIVA, totalFinal) {
+            // Log para debugging
             console.log('Totales calculados:', {
-                subtotal,
-                totalIVA,
-                totalFinal
+                subtotal: subtotal.toFixed(2),
+                totalIVA: totalIVA.toFixed(2),
+                totalConIVA: totalConIVA.toFixed(2),
+                totalFinal: totalFinal.toFixed(2)
             });
         }
 
@@ -545,19 +586,29 @@
         }
 
         function initializeEventListeners() {
-            // Event listeners para cantidad y precio
-            document.querySelectorAll('.quantity, .price').forEach(input => {
+            // Event listeners para cantidad, precio e IVA
+            document.querySelectorAll('.quantity, .price, .iva-percentage').forEach(input => {
                 input.addEventListener('input', function() {
                     // Validar valores negativos
                     if (parseFloat(this.value) < 0) {
                         this.value = 0;
                     }
+                    
+                    // Validar IVA máximo 100%
+                    if (this.classList.contains('iva-percentage') && parseFloat(this.value) > 100) {
+                        this.value = 100;
+                        showAlert('El IVA no puede ser mayor al 100%', 'warning');
+                    }
+                    
                     calcularTotales();
                 });
 
                 input.addEventListener('blur', function() {
                     // Formatear valor al perder el foco
                     if (this.classList.contains('price') && this.value) {
+                        this.value = parseFloat(this.value).toFixed(2);
+                    }
+                    if (this.classList.contains('iva-percentage') && this.value) {
                         this.value = parseFloat(this.value).toFixed(2);
                     }
                 });
@@ -588,6 +639,32 @@
                 showAlert('Debe especificar al menos una cantidad disponible mayor a 0', 'error');
                 return false;
             }
+
+            // Validar que todos los productos tengan precios e IVA válidos
+            const quantities = document.querySelectorAll('.quantity');
+            const prices = document.querySelectorAll('.price');
+            const ivas = document.querySelectorAll('.iva-percentage');
+            
+            for (let i = 0; i < quantities.length; i++) {
+                const quantity = parseFloat(quantities[i].value) || 0;
+                const price = parseFloat(prices[i].value) || 0;
+                const iva = parseFloat(ivas[i].value);
+                
+                if (quantity > 0) {
+                    if (price <= 0) {
+                        e.preventDefault();
+                        showAlert('Todos los productos con cantidad disponible deben tener un precio mayor a 0', 'error');
+                        prices[i].focus();
+                        return false;
+                    }
+                    if (isNaN(iva) || iva < 0) {
+                        e.preventDefault();
+                        showAlert('Todos los productos deben tener un porcentaje de IVA válido (0% o mayor)', 'error');
+                        ivas[i].focus();
+                        return false;
+                    }
+                }
+            }
         });
 
         // Función para responder cotización
@@ -596,20 +673,25 @@
                 return;
             }
 
-            // Validar que hay cantidades y precios
+            // Validar que hay cantidades, precios e IVA válidos
             const quantities = document.querySelectorAll('.quantity');
             const prices = document.querySelectorAll('.price');
+            const ivas = document.querySelectorAll('.iva-percentage');
             let hasValidData = false;
 
             for (let i = 0; i < quantities.length; i++) {
-                if (parseFloat(quantities[i].value) > 0 && parseFloat(prices[i].value) > 0) {
+                const quantity = parseFloat(quantities[i].value) || 0;
+                const price = parseFloat(prices[i].value) || 0;
+                const iva = parseFloat(ivas[i].value);
+
+                if (quantity > 0 && price > 0 && !isNaN(iva) && iva >= 0) {
                     hasValidData = true;
                     break;
                 }
             }
 
             if (!hasValidData) {
-                showAlert('Debe especificar al menos una cantidad disponible y precio mayor a 0', 'error');
+                showAlert('Debe especificar al menos una cantidad disponible, precio mayor a 0 y porcentaje de IVA válido', 'error');
                 return;
             }
 

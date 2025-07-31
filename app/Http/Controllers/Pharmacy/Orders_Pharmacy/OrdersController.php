@@ -17,32 +17,22 @@ use Illuminate\Support\Facades\Log;
 
 class OrdersController extends Controller
 {
-    public function __construct()
-    {
-        Log::info("=== OrdersController Constructor - Request: " . request()->method() . " " . request()->fullUrl() . " ===");
-    }
-
     /**
      * Verificar que el usuario tenga acceso a la farmacia de la orden
      */
     private function validatePharmacyAccess(Orders $order = null)
     {
-        Log::info("=== validatePharmacyAccess - Orden ID: " . ($order ? $order->id : 'null') . " ===");
-        
         $pharmacy = Auth::user()->pharmacies->first();
         $pharmacyId = $pharmacy ? $pharmacy->id : null;
 
         if (!$pharmacyId) {
-            Log::error("Usuario sin farmacia asociada");
             abort(403, 'No tienes una farmacia asociada.');
         }
 
         if ($order && $order->pharmacy_id !== $pharmacyId) {
-            Log::error("Usuario no autorizado para orden {$order->id}. Farmacia usuario: {$pharmacyId}, Farmacia orden: {$order->pharmacy_id}");
             abort(403, 'No autorizado para acceder a esta orden.');
         }
 
-        Log::info("Acceso validado correctamente para farmacia: {$pharmacyId}");
         return $pharmacyId;
     }
     /**
@@ -239,36 +229,42 @@ class OrdersController extends Controller
             'details' => 'array',
             'details.*.quantity_available' => 'required|numeric|min:0',
             'details.*.unit_price' => 'required|numeric|min:0',
+            'details.*.iva_percentage' => 'required|numeric|min:0|max:100',
         ]);
 
         $this->validatePharmacyAccess($order);
 
         DB::transaction(function () use ($request, $order, $validated) {
-            $subtotal = 0;
+            $subtotalSinIva = 0;
+            $totalIva = 0;
 
-            // Actualizar detalles de la orden
+            // Actualizar detalles de la orden con cálculo individual de IVA
             foreach ($request->input('details', []) as $id => $detailData) {
                 $detail = OrderDetail::find($id);
                 if ($detail && $detail->order_id === $order->id) {
                     $cantidadDisponible = floatval($detailData['quantity_available']);
                     $cantidadSolicitada = $detail->requested_amount;
                     $precio = floatval($detailData['unit_price']);
+                    $ivaPercentage = floatval($detailData['iva_percentage']);
 
                     $cantidadParaCalculo = min($cantidadSolicitada, $cantidadDisponible);
-                    $subtotalDetalle = $cantidadParaCalculo * $precio;
+                    $subtotalProducto = $cantidadParaCalculo * $precio;
+                    $ivaProducto = $subtotalProducto * ($ivaPercentage / 100);
+                    $totalProductoConIva = $subtotalProducto + $ivaProducto;
 
                     $detail->update([
                         'quantity_available' => $cantidadDisponible,
                         'unit_price' => $precio,
-                        'products_total' => $subtotalDetalle,
+                        'products_total' => $totalProductoConIva, // Guardamos el total con IVA
                     ]);
 
-                    $subtotal += $subtotalDetalle;
+                    $subtotalSinIva += $subtotalProducto;
+                    $totalIva += $ivaProducto;
                 }
             }
 
-            // Calcular totales
-            $totalConIVA = $subtotal * 1.13;
+            // Calcular totales finales
+            $totalConIVA = $subtotalSinIva + $totalIva;
             $shippingCost = floatval($request->input('shipping_cost', 0));
             $totalConEnvio = $totalConIVA + $shippingCost;
 
@@ -300,32 +296,40 @@ class OrdersController extends Controller
             'details' => 'array',
             'details.*.quantity_available' => 'required|numeric|min:0',
             'details.*.unit_price' => 'required|numeric|min:0',
+            'details.*.iva_percentage' => 'required|numeric|min:0|max:100',
         ]);
 
         DB::transaction(function () use ($request, $order) {
-            $subtotal = 0;
+            $subtotalSinIva = 0;
+            $totalIva = 0;
 
-            // Actualizar detalles de la orden
+            // Actualizar detalles de la orden con cálculo individual de IVA
             foreach ($request->input('details', []) as $id => $detailData) {
                 $detail = OrderDetail::find($id);
                 if ($detail && $detail->order_id === $order->id) {
                     $cantidadDisponible = floatval($detailData['quantity_available']);
                     $cantidadSolicitada = $detail->requested_amount;
                     $precio = floatval($detailData['unit_price']);
+                    $ivaPercentage = floatval($detailData['iva_percentage']);
 
                     $cantidadParaCalculo = min($cantidadSolicitada, $cantidadDisponible);
-                    $subtotal += $cantidadParaCalculo * $precio;
+                    $subtotalProducto = $cantidadParaCalculo * $precio;
+                    $ivaProducto = $subtotalProducto * ($ivaPercentage / 100);
+                    $totalProductoConIva = $subtotalProducto + $ivaProducto;
 
                     $detail->update([
                         'quantity_available' => $cantidadDisponible,
                         'unit_price' => $precio,
-                        'products_total' => $cantidadParaCalculo * $precio
+                        'products_total' => $totalProductoConIva // Guardamos el total con IVA
                     ]);
+
+                    $subtotalSinIva += $subtotalProducto;
+                    $totalIva += $ivaProducto;
                 }
             }
 
-            // Calcular totales
-            $totalConIVA = $subtotal * 1.13;
+            // Calcular totales finales
+            $totalConIVA = $subtotalSinIva + $totalIva;
             $shippingCost = floatval($request->input('shipping_cost', 0));
             $totalConEnvio = $totalConIVA + $shippingCost;
 
@@ -346,34 +350,22 @@ class OrdersController extends Controller
      */
     public function confirmPayment(Orders $order)
     {
-        // Log muy temprano para verificar que el método se ejecuta
-        Log::info("=== INICIO confirmPayment - Orden ID: {$order->id} ===");
-        Log::info("=== REQUEST METHOD: " . request()->method() . " ===");
-        Log::info("=== REQUEST URL: " . request()->url() . " ===");
-        
         $this->validatePharmacyAccess($order);
 
-        // Log para debugging
-        Log::info("Confirmando pago para orden {$order->id}, estado actual: {$order->status->value}");
-
         if ($order->status !== OrderStatus::CONFIRMADO) {
-            Log::warning("Intento de confirmar pago en orden {$order->id} con estado incorrecto. Estado actual: {$order->status->value}, Esperado: " . OrderStatus::CONFIRMADO->value);
-            return redirect()->back()->with('error', 'Solo se puede confirmar el pago de órdenes confirmadas. Estado actual: ' . $order->status->label());
+            return redirect()->back()->with('error', 'Solo se puede confirmar el pago de órdenes confirmadas.');
         }
 
         // Si es SINPE, verificar que el voucher esté subido
         if ($order->payment_method == PaymentMethod::SINPE && !$order->voucher) {
-            Log::warning("Intento de confirmar pago SINPE sin voucher para orden {$order->id}");
             return redirect()->back()->with('error', 'No se ha subido el comprobante SINPE.');
         }
 
         try {
             $order->update(['status' => OrderStatus::PREPARANDO]);
-            Log::info("Orden {$order->id} cambiada exitosamente a estado preparando");
             
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Pago confirmado. La orden está ahora en preparación.');
         } catch (\Exception $e) {
-            Log::error("Error al confirmar pago de orden {$order->id}: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al confirmar el pago. Intente nuevamente.');
         }
     }
@@ -385,21 +377,15 @@ class OrdersController extends Controller
     {
         $this->validatePharmacyAccess($order);
 
-        // Log para debugging
-        Log::info("Marcando orden {$order->id} como despachada, estado actual: {$order->status->value}");
-
         if ($order->status !== OrderStatus::PREPARANDO) {
-            Log::warning("Intento de despachar orden {$order->id} con estado incorrecto. Estado actual: {$order->status->value}, Esperado: " . OrderStatus::PREPARANDO->value);
-            return redirect()->back()->with('error', 'Solo se pueden despachar órdenes que estén en preparación. Estado actual: ' . $order->status->label());
+            return redirect()->back()->with('error', 'Solo se pueden despachar órdenes que estén en preparación.');
         }
 
         try {
             $order->update(['status' => OrderStatus::DESPACHADO]);
-            Log::info("Orden {$order->id} marcada exitosamente como despachada");
             
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Orden marcada como despachada exitosamente.');
         } catch (\Exception $e) {
-            Log::error("Error al marcar orden {$order->id} como despachada: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al marcar como despachada. Intente nuevamente.');
         }
     }
