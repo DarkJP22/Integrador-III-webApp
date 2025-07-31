@@ -659,6 +659,11 @@ use App\Http\Controllers\Pharmacy\Orders_Pharmacy\OrdersController;
 
 Route::prefix('pharmacy')->group(function () {
     Route::resource('orders', OrdersController::class)->names('pharmacy.orders');
+    
+    // Rutas específicas para el flujo de estados de órdenes
+    Route::put('orders/{order}/respond-quote', [OrdersController::class, 'respondQuote'])->name('pharmacy.orders.respond-quote');
+    Route::put('orders/{order}/confirm-payment', [OrdersController::class, 'confirmPayment'])->name('pharmacy.orders.confirm-payment');
+    Route::put('orders/{order}/mark-dispatched', [OrdersController::class, 'markAsDispatched'])->name('pharmacy.orders.mark-dispatched');
 });
 
 //admins

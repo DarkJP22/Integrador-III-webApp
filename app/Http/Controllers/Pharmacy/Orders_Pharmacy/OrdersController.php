@@ -44,10 +44,14 @@ class OrdersController extends Controller
         $pharmacyId = $this->validatePharmacyAccess();
 
         // Marcar las notificaciones de nuevas órdenes como leídas
-        // cuando el usuario entre a la vista de órdenes
-        Auth::user()->unreadNotifications()
-            ->where('type', 'App\Notifications\NewOrderPharmacie')
-            ->update(['read_at' => now()]);
+        if (Auth::user()) {
+            DB::table('notifications')
+                ->where('notifiable_id', Auth::id())
+                ->where('notifiable_type', 'App\User')
+                ->where('type', 'App\Notifications\NewOrderPharmacie')
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        }
 
         // Construir query con filtros
         $query = Orders::with(['user', 'pharmacy'])
@@ -227,10 +231,8 @@ class OrdersController extends Controller
             'details.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        // Verificar que el usuario puede editar esta orden
         $this->validatePharmacyAccess($order);
 
-        // Usar transacción para garantizar consistencia
         DB::transaction(function () use ($request, $order, $validated) {
             $subtotal = 0;
 
@@ -242,11 +244,7 @@ class OrdersController extends Controller
                     $cantidadSolicitada = $detail->requested_amount;
                     $precio = floatval($detailData['unit_price']);
 
-                    // Aplicar la misma lógica que en JavaScript:
-                    // Si cantidad solicitada > disponible, usar disponible
-                    // Si cantidad solicitada <= disponible, usar solicitada
-                    $cantidadParaCalculo = $cantidadSolicitada > $cantidadDisponible ? $cantidadDisponible : $cantidadSolicitada;
-
+                    $cantidadParaCalculo = min($cantidadSolicitada, $cantidadDisponible);
                     $subtotalDetalle = $cantidadParaCalculo * $precio;
 
                     $detail->update([
@@ -269,10 +267,105 @@ class OrdersController extends Controller
                 'status' => $validated['status'],
                 'order_total' => $totalConIVA,
                 'shipping_total' => $totalConEnvio,
+                'shipping_cost' => $shippingCost,
             ]);
         });
 
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden actualizada correctamente.');
+    }
+
+    /**
+     * Responder a una cotización (cambiar de 'cotizacion' a 'esperando_confirmacion')
+     */
+    public function respondQuote(Request $request, Orders $order)
+    {
+        $this->validatePharmacyAccess($order);
+
+        if ($order->status !== OrderStatus::COTIZACION) {
+            return redirect()->back()->with('error', 'Solo se pueden responder órdenes en estado de cotización.');
+        }
+
+        $validated = $request->validate([
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'details' => 'array',
+            'details.*.quantity_available' => 'required|numeric|min:0',
+            'details.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        DB::transaction(function () use ($request, $order) {
+            $subtotal = 0;
+
+            // Actualizar detalles de la orden
+            foreach ($request->input('details', []) as $id => $detailData) {
+                $detail = OrderDetail::find($id);
+                if ($detail && $detail->order_id === $order->id) {
+                    $cantidadDisponible = floatval($detailData['quantity_available']);
+                    $cantidadSolicitada = $detail->requested_amount;
+                    $precio = floatval($detailData['unit_price']);
+
+                    $cantidadParaCalculo = min($cantidadSolicitada, $cantidadDisponible);
+                    $subtotal += $cantidadParaCalculo * $precio;
+
+                    $detail->update([
+                        'quantity_available' => $cantidadDisponible,
+                        'unit_price' => $precio,
+                        'products_total' => $cantidadParaCalculo * $precio
+                    ]);
+                }
+            }
+
+            // Calcular totales
+            $totalConIVA = $subtotal * 1.13;
+            $shippingCost = floatval($request->input('shipping_cost', 0));
+            $totalConEnvio = $totalConIVA + $shippingCost;
+
+            // Actualizar la orden y cambiar estado automáticamente
+            $order->update([
+                'status' => OrderStatus::ESPERANDO_CONFIRMACION,
+                'order_total' => $totalConIVA,
+                'shipping_total' => $totalConEnvio,
+                'shipping_cost' => $shippingCost
+            ]);
+        });
+
+        return redirect()->route('pharmacy.orders.index')->with('success', 'Cotización enviada exitosamente.');
+    }
+
+    /**
+     * Confirmar método de pago y cambiar a estado 'preparando'
+     */
+    public function confirmPayment(Orders $order)
+    {
+        $this->validatePharmacyAccess($order);
+
+        if ($order->status !== OrderStatus::CONFIRMADO) {
+            return redirect()->back()->with('error', 'Solo se puede confirmar el pago de órdenes confirmadas.');
+        }
+
+        // Si es SINPE, verificar que el voucher esté subido
+        if ($order->payment_method == PaymentMethod::SINPE && !$order->voucher) {
+            return redirect()->back()->with('error', 'No se ha subido el comprobante SINPE.');
+        }
+
+        $order->update(['status' => OrderStatus::PREPARANDO]);
+
+        return redirect()->route('pharmacy.orders.index')->with('success', 'Pago confirmado. La orden está ahora en preparación.');
+    }
+
+    /**
+     * Marcar orden como despachada
+     */
+    public function markAsDispatched(Orders $order)
+    {
+        $this->validatePharmacyAccess($order);
+
+        if ($order->status !== OrderStatus::PREPARANDO) {
+            return redirect()->back()->with('error', 'Solo se pueden despachar órdenes que estén en preparación.');
+        }
+
+        $order->update(['status' => OrderStatus::DESPACHADO]);
+
+        return redirect()->route('pharmacy.orders.index')->with('success', 'Orden marcada como despachada exitosamente.');
     }
 
     /**
@@ -281,7 +374,6 @@ class OrdersController extends Controller
     public function destroy(Orders $order)
     {
         $this->validatePharmacyAccess($order);
-
         $order->delete();
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden eliminada.');
     }

@@ -97,6 +97,34 @@
         </button>
     </div>
     @endif
+
+    {{-- Información contextual según el estado --}}
+    @if($order->status->value === 'cotizacion')
+        <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i> <strong>Cotización:</strong> Complete los precios y cantidades disponibles, luego use "Responder Cotización".
+        </div>
+    @elseif($order->status->value === 'esperando_confirmacion')
+        <div class="alert alert-warning">
+            <i class="fa fa-clock-o"></i> <strong>Esperando confirmación del usuario.</strong> El usuario debe confirmar o cancelar esta cotización desde la app móvil.
+        </div>
+    @elseif($order->status->value === 'confirmado')
+        <div class="alert alert-success">
+            <i class="fa fa-check-circle"></i> <strong>¡Orden confirmada!</strong> Verifique el pago y proceda a preparar la orden.
+        </div>
+    @elseif($order->status->value === 'preparando')
+        <div class="alert alert-info">
+            <i class="fa fa-cogs"></i> <strong>Orden en preparación.</strong> Cuando esté lista, márquela como despachada.
+        </div>
+    @elseif($order->status->value === 'despachado')
+        <div class="alert alert-success">
+            <i class="fa fa-truck"></i> <strong>Orden despachada exitosamente.</strong>
+        </div>
+    @elseif($order->status->value === 'cancelado')
+        <div class="alert alert-danger">
+            <i class="fa fa-times-circle"></i> <strong>Orden cancelada.</strong>
+        </div>
+    @endif
+
     <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST">
         @csrf
         @method('PUT')
@@ -159,17 +187,54 @@
                                 <strong>Comprobante subido por el usuario</strong>
                                 <br><small class="text-muted">{{ basename($order->voucher) }}</small>
                             </div>
-                            <a href="{{ asset('storage/' . $order->voucher) }}" target="_blank" class="btn btn-success btn-sm">
+                            <a href="{{ asset('storage/' . $order->voucher) }}" target="_blank" class="btn btn-info btn-sm">
                                 <i class="fa fa-eye"></i> Ver Comprobante
                             </a>
+                            @if($order->status->value === 'confirmado')
+                                <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline; margin-left: 10px;">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Confirmar el pago y comenzar preparación?')">
+                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                         @else
                         <div style="padding: 15px; background-color: #fcf8e3; border: 1px solid #faebcc; border-radius: 4px; color: #8a6d3b;">
                             <i class="fa fa-exclamation-triangle"></i>
                             <strong>Sin comprobante</strong>
                             <br><small>El usuario aún no ha subido el comprobante de pago desde la app móvil.</small>
+                            @if($order->status->value === 'confirmado')
+                                <br><br>
+                                <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('¿Confirmar pago efectivo y comenzar preparación?')">
+                                        <i class="fa fa-money"></i> Confirmar Pago Efectivo
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                         @endif
+                    </div>
+                </div>
+                @elseif($order->status->value === 'confirmado' && !$order->isElectronicPayment())
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <div style="padding: 15px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724;">
+                            <i class="fa fa-money text-success"></i>
+                            <strong>Pago en Efectivo</strong>
+                            <br><small>El usuario pagará en efectivo al recibir la orden.</small>
+                            <br><br>
+                            <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Confirmar y comenzar preparación?')">
+                                    <i class="fa fa-check-circle"></i> Confirmar y Preparar
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 @endif
@@ -306,8 +371,9 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="row">
+                    @if ($order->requiresShipping())
                     <div class="form-group col-md-6">
                         <label>Costo de Envío</label>
                         <div class="input-group">
@@ -320,17 +386,16 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+                    @endif
 
-                    @if($order->requiresShipping())
                     <div class="form-group col-md-6">
-                        <label><strong>Total Final con Envío</strong></label>
+                        <label><strong>{{ $order->requiresShipping() ? 'Total Final con Envío' : 'Total Final' }}</strong></label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
                             <input type="number" name="shipping_total" id="shipping_total"
                                 class="form-control" style="background-color: #d4edda; font-weight: bold;" value="0.00" readonly>
                         </div>
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -341,9 +406,30 @@
                     <a href="{{ route('pharmacy.orders.index') }}" class="btn btn-default">
                         <i class="fa fa-arrow-left"></i> Regresar
                     </a>
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('¿Está seguro de actualizar esta orden?')">
-                        <i class="fa fa-save"></i> Actualizar Orden
-                    </button>
+                    
+                    <div>
+                        @if($order->status->value === 'cotizacion')
+                            <button type="button" class="btn btn-success btn-lg" onclick="respondQuote()">
+                                <i class="fa fa-paper-plane"></i> Responder Cotización
+                            </button>
+                        @elseif($order->status->value === 'preparando')
+                            <form action="{{ route('pharmacy.orders.mark-dispatched', $order) }}" method="POST" style="display: inline;">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('¿Marcar como despachada?')">
+                                    <i class="fa fa-truck"></i> Marcar como Despachada
+                                </button>
+                            </form>
+                        @elseif(in_array($order->status->value, ['esperando_confirmacion', 'confirmado', 'despachado', 'cancelado']))
+                            <button type="submit" class="btn btn-default" onclick="return confirm('¿Está seguro de actualizar esta orden?')">
+                                <i class="fa fa-save"></i> Guardar Cambios
+                            </button>
+                        @else
+                            <button type="submit" class="btn btn-primary" onclick="return confirm('¿Está seguro de actualizar esta orden?')">
+                                <i class="fa fa-save"></i> Actualizar Orden
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -505,6 +591,35 @@
                 return false;
             }
         });
+
+        // Función para responder cotización
+        window.respondQuote = function() {
+            if (!confirm('¿Está seguro de enviar esta cotización al usuario? Esta acción cambiará el estado a "Esperando Confirmación".')) {
+                return;
+            }
+
+            // Validar que hay cantidades y precios
+            const quantities = document.querySelectorAll('.quantity');
+            const prices = document.querySelectorAll('.price');
+            let hasValidData = false;
+
+            for (let i = 0; i < quantities.length; i++) {
+                if (parseFloat(quantities[i].value) > 0 && parseFloat(prices[i].value) > 0) {
+                    hasValidData = true;
+                    break;
+                }
+            }
+
+            if (!hasValidData) {
+                showAlert('Debe especificar al menos una cantidad disponible y precio mayor a 0', 'error');
+                return;
+            }
+
+            // Cambiar la acción del formulario para responder cotización
+            const form = document.querySelector('form');
+            form.action = '{{ route("pharmacy.orders.respond-quote", $order) }}';
+            form.submit();
+        };
     });
 </script>
 @endpush
