@@ -12,12 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('affiliation_users', function (Blueprint $table) {
-            $table->increments('id');
+            $table->string('id')->primary();
             $table->unsignedInteger('user_id')->index();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->integer('discount');
-            $table->boolean('active')->default(false);
-            $table->enum('type_affiliation', ['Basic', 'Standard', 'Premium'])->default('Basic');
+            $table->integer('discount')->default(10);
+            $table->enum('active', ['Pending', 'Approved', 'Denied'])->default('Pending');
+            $table->float('priceToAffiliation')->default(5);
+            $table->enum('type_affiliation', ['Monthly', 'Semi-Annually', 'Annually'])->default('Monthly');
             $table->text('voucher')->nullable(false);
             $table->timestamps();
         });

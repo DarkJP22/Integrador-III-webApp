@@ -725,7 +725,9 @@ foreach (['active', 'inactive'] as $key) {
         'as' => 'requestAffiliation.'.$key,
         'uses' => 'Admin\AffiliationRequestController@'.$key,
     ]);
+
 }
+Route::get('admin/affiliations/request/affiliate/state', 'Admin\AffiliationRequestController@showToState');
 //Fin de la modificación de ruta para ver las afiliaciones de los usuarios Grupo G1
 Route::put('/admin/users/{user}/changeaccountcentromedico', 'Admin\UserController@changeAccountCentroMedico');
 Route::delete('/admin/users/{user}/cancel-account', 'Admin\UserController@cancelAccount');

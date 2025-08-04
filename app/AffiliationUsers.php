@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class AffiliationUsers extends Model
 {
     use HasFactory;
+     public $incrementing = false;
+    protected $keyType = 'string';
     protected $table = 'affiliation_users';
 
     protected $fillable = [
+        'id',
         'user_id',
         'date',
         'active',
@@ -18,7 +21,8 @@ class AffiliationUsers extends Model
         'voucher',
         "created_at",
         "updated_at",
-        'discount'
+        'discount',
+        'priceToAffiliation'
     ];
     
     public function user()

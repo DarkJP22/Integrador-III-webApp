@@ -20,19 +20,42 @@ class AffiliationRequestController extends Controller
    public function index()
 {
 
-    $affiliationUsers = AffiliationUsers::where('active', 0)->get();
+    $affiliationUsers = AffiliationUsers::where('active', "Pending")->get();
 
     return view('admin.affiliation.index', compact('affiliationUsers'));
 }
+//Se hizo una modificación para que se pueda ver las solicitudes de afiliación por estado y nombre Grpo G1
+public function showToState(Request $request)
+{
+    $estado = $request->input('estado');
+    $nombre = $request->input('nombre');
 
+    $query = AffiliationUsers::query();
 
+    // Filtro por estado
+    if (in_array($estado, ['Pending', 'Approved', 'Denied'])) {
+        $query->where('active', $estado);
+    }
+
+    // Filtro por nombre (relación con user)
+    if (!empty($nombre)) {
+        $query->whereHas('user', function ($q) use ($nombre) {
+            $q->where('name', 'like', "%{$nombre}%");
+        });
+    }
+
+    $affiliationUsers = $query->get();
+
+    return view('admin.affiliation.index', compact('affiliationUsers'));
+}
+//Fin de la modificación para que se pueda ver las solicitudes de afiliación por estado y nombre Grpo G1
 public function active($id)
 {
     $requestaffiliation = AffiliationUsers::find($id);
 
     if ($requestaffiliation) {
 
-        $requestaffiliation->active = 1;
+        $requestaffiliation->active = "Approved";
         $requestaffiliation->save();
         //Esto se dejará documentado para futuras modificaciones grupo G1
 /*
@@ -93,7 +116,16 @@ public function active($id)
     return back();
   
 }
+public function inactive($id)
+{
+    $requestaffiliation = AffiliationUsers::find($id);
 
-
+    if ($requestaffiliation) {
+        $requestaffiliation->active = "Denied";
+        $requestaffiliation->save();
+    }
+    return back();
+}
 }
 
+    
