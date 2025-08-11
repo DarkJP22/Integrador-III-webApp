@@ -28,8 +28,8 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\MaintenanceCancelAccounts::class,
         \App\Console\Commands\DisablePuntoVentaFarmacia::class,
         \App\Console\Commands\CommissionsLab::class,
-        \App\Console\Commands\CreateAccountToOrfantPatients::class
-        
+        \App\Console\Commands\CreateAccountToOrfantPatients::class,
+        \App\Console\Commands\inactiveAffiliation::class //Se agrega el comando para desactivar afiliaciones inactivas grupo G1
     ];
 
     /**
@@ -44,6 +44,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('backup:clean')->daily()->at('01:00');
         $schedule->command('backup:run')->daily()->at('02:00');
         $schedule->command('queue:prune-batches --unfinished=72')->daily();
+        $schedule->command('app:inactive-affiliation')->daily(); // Se agrega el comando para desactivar afiliaciones inactivas grupo G1
         //$schedule->command('model:prune')->daily();
         $schedule->command(\App\Console\Commands\MaintenanceCancelAccounts::class)->daily();
         $schedule->command(\App\Console\Commands\ProcessAnonymousAccounts::class)->daily()->at('01:00');

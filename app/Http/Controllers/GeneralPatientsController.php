@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateOrAssignAccount;
 use App\Actions\ShareLinkAppMobileAction;
+use App\AffiliationUsers;
 use App\Discount;
 use App\Jobs\SendAppPhoneMessageJob;
 use App\Repositories\PatientRepository;
@@ -84,7 +85,16 @@ class GeneralPatientsController extends Controller
         $patient = Patient::where('ide', $ide)->first();
         
         $to = auth()->user()->isPharmacy() ? 'farmacia' : 'clinica';
+//Se inicia con la modificación del grupo G1 
 
+   $idAffiliation = $patient->user()->first()->id;
+$affiliation = $idAffiliation
+    ? AffiliationUsers::where('user_id', $idAffiliation)
+                      ->where('active', "Approved")
+                      ->first()
+    : null;
+
+    //Fin de la modificación del grupo G1
         $result = [
             'patient' => $patient,
             'isPatient' => $patient ? true : false,
@@ -95,6 +105,7 @@ class GeneralPatientsController extends Controller
             'discount' => Discount::where('for_gps_users', 1)
                                     ->where('to', $to)->get()->first(),
             'lab_exam_discount' => Setting::getSetting('lab_exam_discount') ?? 0,
+            'affiliation' => $affiliation, // Modificación del grupo G1
         ];
 
         return $result;
