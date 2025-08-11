@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\AffiliationUsersController;    
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
+// Hola Jose Como estás 
 
 Route::get('/version-app', function (Request $request) {
     $version = json_decode(file_get_contents(public_path() . "/mobile/version.json"), true);
@@ -159,6 +159,19 @@ Route::get('/social-stories', 'Api\SocialStoryController@index')->middleware('au
 Route::get('/social-posts', 'Api\SocialPostController@index')->middleware('auth:api');
 Route::delete('/medic/{user}/social-posts/{socialImage}', 'Api\MedicSocialPostController@destroy')->middleware('auth:api');
 Route::get('/medic/{user}/social-posts', 'Api\MedicSocialPostController@index')->middleware('auth:api');
+
+
+//Hola 123 probando que monton
+//Hola 123 probando que monton 2
+//Afiliaciones de usuarios
+Route::get('affiliation-users', 'Api\AffiliationUsersController@index')->middleware('auth:api');
+
+Route::post('affiliation-users', 'Api\AffiliationUsersController@store')->middleware('auth:api');
+
+Route::put('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@update')->middleware('auth:api');
+
+Route::delete('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@destroy')->middleware('auth:api');
+Route::get('affiliation-users/{affiliationUsers}', 'Api\AffiliationUsersController@checkUserAffiliation')->middleware('auth:api');
 
 
 //Prueba git

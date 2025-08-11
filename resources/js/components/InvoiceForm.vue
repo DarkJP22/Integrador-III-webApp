@@ -163,7 +163,19 @@
                                     <h4>Información importante!</h4>
 
                                     <p>Es un usuario de Doctor Blue</p>
+                                    
                                 </div>
+                                <div v-if="isAffiliateUser" class="callout callout-info">
+                                  <h4>Información importante!</h4>
+
+                                    <p>Es un usuario afiliado</p>
+  
+                                        <label>
+                                        <input type="checkbox" v-model="applyDiscountAffiliate" />
+                                     Aplicar descuento de afiliación
+                                      </label>
+                                      </div>
+
                                 <div class="form-row">
                                     <div class="form-group col-md-4">
                                         <label for="TipoDocumento">Tipo Identificacion</label>
@@ -808,6 +820,9 @@ export default {
             possiblePatient:{},
             activitiesHacienda: this.activities ? this.activities : [],
             isGPSUser:false,
+            isAffiliateUser:false,
+            applyDiscountAffiliate:false,
+            discountsAffiliate:0,
             customerDiscountUserGPS:0,
             currentAcumuladoNota: 0,
             accumulated_affiliation: false,
@@ -1188,10 +1203,12 @@ export default {
                             this.setDiscount();
                         }
                     }
-                   
-                 
-
-
+                    //Modificación para determinar si el paciente cuenta con un plan de afiliación grupo g1
+                    if(data['affiliation']){
+                        this.isAffiliateUser = true;
+                        this.discountsAffiliate = data['affiliation'].discount;
+                    }
+                  //Fin de las modificaciones para determinar si el paciente cuenta con un plan de afiliación grupo g1
                 });
        
         },
@@ -1285,6 +1302,16 @@ export default {
 
 
             }
+            //Inicio de modificaciones grupo g1
+            if(this.isAffiliateUser && this.applyDiscountAffiliate){
+                discounts.push({
+                    PorcentajeDescuento: this.discountsAffiliate,
+                    MontoDescuento: 0,
+                    NaturalezaDescuento: 'Descuento Afiliado'
+                });
+            }
+
+            //Fin de Modificaciones grupo g1    
             const discount = _.find( this.discounts, function(o) {
                 return o.id === vm.invoice.discount_id;
             });
@@ -1304,7 +1331,6 @@ export default {
                 MontoDescuento: 0,
                 NaturalezaDescuento: 'Descuento paciente'
             });
-
             this.invoice.lines.forEach((line, index) => {
                 
                 line.discounts = discounts;
@@ -1559,7 +1585,7 @@ export default {
             /********* Multiple Discounts */
             let SubTotal = MontoTotal;
             let MontoTotalDescuentos = 0;
-
+             
             line.discounts.forEach(discount => {
 
                 const MontoDescuentoLinea = redondeo((discount.PorcentajeDescuento / 100) * SubTotal, 5);
@@ -2318,6 +2344,8 @@ export default {
             this.isGPSUser = false;
             this.customerDiscountUserGPS = 0;
             this.currentAcumuladoNota = 0;
+            this.discountsAffiliate = 0; // Se añade el descuento afiliado grupo g1
+            this.applyDiscountAffiliate = false; // Se añade la aplicacion del descuento afiliado grupo g1
             this.accumulated_affiliation = false;
             this.currentAcumuladoUtilizado = 0;
 
