@@ -28,17 +28,16 @@ export default {
         listen() {
 
             if (window.App.user.id) {
-
                 var audio = new Audio('/img/notification.mp3');
-
                 window.Echo.private(`App.User.${window.App.user.id}`)
                     .notification((notification) => {
                         console.log(notification);
                         this.notifications.unshift(notification);
                         audio.play();
+                        if (notification.type === 'App\\Notifications\\NewOrderPharmacie') {
+                            window.location.reload();
+                        }
                     });
-
-
             }
 
 

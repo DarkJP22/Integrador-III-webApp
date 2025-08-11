@@ -16,7 +16,7 @@ class Drug extends Model
 
     protected $appends = ['image_url'];
 
-    const array PRESENTATIONS = [
+    const PRESENTATIONS = [
         'Tableta',
         'Capsula',
         'Jarabe',

@@ -227,6 +227,23 @@
             });
         });
     });
+
+    // Escuchar eventos de nuevas órdenes
+    function listenPharmacyOrderUpdate() {
+        if (window.Echo && window.App && window.App.user && window.App.user.id) {
+            console.log('Registrando listener PharmacyOrderUpdate');
+            window.Echo.private(`App.User.${window.App.user.id}`)
+                .listen('PharmacyOrderUpdate', (e) => {
+                    alert('Recargando la página... Nueva orden: ' + (e.order_id || ''));
+                    console.log('Evento PharmacyOrderUpdate:', e);
+                    window.location.reload();
+                });
+        } else {
+            // Intenta de nuevo en 200ms
+            setTimeout(listenPharmacyOrderUpdate, 200);
+        }
+    }
+listenPharmacyOrderUpdate();
 </script>
 @endpush
 

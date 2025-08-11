@@ -10,17 +10,19 @@ use App\Pharmacy;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\ShippingRequired;
+use App\Events\PharmacyOrderUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Artisan;
 
 class OrdersController extends Controller
 {
     /**
      * Verificar que el usuario tenga acceso a la farmacia de la orden
      */
-    private function validatePharmacyAccess(Orders $order = null)
+    private function validatePharmacyAccess(?Orders $order = null)
     {
         $pharmacy = Auth::user()->pharmacies->first();
         $pharmacyId = $pharmacy ? $pharmacy->id : null;
@@ -108,6 +110,7 @@ class OrdersController extends Controller
         ));
     }
 
+    //Funciones de create y store son unicamente para pruebas 
     /**
      * Show the form for creating a new resource.
      */
@@ -184,16 +187,6 @@ class OrdersController extends Controller
 
         return redirect()->route('pharmacy.orders.create')->with('success', 'Orden creada exitosamente.');
     }
-
-    /**
-     * Display the specified resource.
-    public function show(Orders $order)
-    {
-        $this->validatePharmacyAccess($order);
-
-        return view('pharmacy.requests-orders.show', compact('order'));
-    }
-     */
 
     /**
      * Show the form for editing the specified resource.
@@ -277,6 +270,9 @@ class OrdersController extends Controller
             ]);
         });
 
+        // Disparar evento de actualización de orden
+        PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden actualizada correctamente.');
     }
 
@@ -342,6 +338,9 @@ class OrdersController extends Controller
             ]);
         });
 
+        // Disparar evento de actualización de orden
+        PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+
         return redirect()->route('pharmacy.orders.index')->with('success', 'Cotización enviada exitosamente.');
     }
 
@@ -364,6 +363,9 @@ class OrdersController extends Controller
         try {
             $order->update(['status' => OrderStatus::PREPARANDO]);
             
+            // Disparar evento de actualización de orden
+            PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+            
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Pago confirmado. La orden está ahora en preparación.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al confirmar el pago. Intente nuevamente.');
@@ -383,6 +385,9 @@ class OrdersController extends Controller
 
         try {
             $order->update(['status' => OrderStatus::DESPACHADO]);
+            
+            // Disparar evento de actualización de orden
+            PharmacyOrderUpdate::dispatch(Auth::user(), $order);
             
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Orden marcada como despachada exitosamente.');
         } catch (\Exception $e) {
