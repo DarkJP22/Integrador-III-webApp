@@ -808,10 +808,17 @@ class User extends Authenticatable
             set: fn ($value) => strtoupper($value),
         );
     }
+
+    public function affiliationUsers(): HasMany
+    {
+        return $this->hasMany(AffiliationUsers::class, 'user_id');
+
+    }
     //Integrador:
     public function pharmacy()
     {
         return $this->hasOne(\App\Pharmacy::class, 'user_id', 'id');
+
     }
 
     public function orders(): HasMany
