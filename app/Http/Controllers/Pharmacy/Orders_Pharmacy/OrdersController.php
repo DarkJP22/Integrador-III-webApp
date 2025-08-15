@@ -171,6 +171,7 @@ class OrdersController extends Controller
                         'requested_amount' => $detail['requested_amount'],
                         'quantity_available' => $detail['quantity_available'] ?? 0,
                         'unit_price' => $detail['unit_price'] ?? 0,
+                        'iva_percentage' => $detail['iva_percentage'] ?? 0,
                         'products_total' => ($detail['quantity_available'] ?? 0) * ($detail['unit_price'] ?? 0),
                     ]);
                 }
@@ -248,6 +249,7 @@ class OrdersController extends Controller
                     $detail->update([
                         'quantity_available' => $cantidadDisponible,
                         'unit_price' => $precio,
+                        'iva_percentage' => $ivaPercentage,
                         'products_total' => $totalProductoConIva, // Guardamos el total con IVA
                     ]);
 
@@ -281,6 +283,9 @@ class OrdersController extends Controller
      */
     public function respondQuote(Request $request, Orders $order)
     {
+        Log::info('Datos recibidos en respondQuote:', [
+            'all' => $request->all(),
+        ]);
         $this->validatePharmacyAccess($order);
 
         if ($order->status !== OrderStatus::COTIZACION) {
@@ -316,6 +321,7 @@ class OrdersController extends Controller
                     $detail->update([
                         'quantity_available' => $cantidadDisponible,
                         'unit_price' => $precio,
+                        'iva_percentage' => $ivaPercentage,
                         'products_total' => $totalProductoConIva // Guardamos el total con IVA
                     ]);
 

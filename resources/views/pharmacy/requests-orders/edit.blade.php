@@ -125,7 +125,7 @@
         </div>
     @endif
 
-    <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST">
+    <form id="order-main-form" action="{{ route('pharmacy.orders.update', $order) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -270,11 +270,12 @@
                         <tbody>
                             @forelse($order->details as $detail)
                             <tr>
-                                <td>
+<td>
                                     <strong>{{ $detail->drug->name ?? 'N/A' }}</strong>
                                     @if($detail->drug->brand)
                                     <br><small class="text-muted">{{ $detail->drug->brand }}</small>
                                     @endif
+                                    <input type="hidden" name="details[{{ $detail->id }}][drug_id]" value="{{ $detail->drug_id }}">
                                 </td>
                                 <td>{{ $detail->description ?? 'Sin descripción' }}</td>
                                 <td class="text-center">
@@ -306,7 +307,7 @@
                                         <input type="number" step="0.01" min="0" max="100"
                                             name="details[{{ $detail->id }}][iva_percentage]"
                                             class="form-control iva-percentage @error('details.' . $detail->id . '.iva_percentage') is-invalid @enderror"
-                                            value="{{ old('details.' . $detail->id . '.iva_percentage', 13) }}"
+                                            value="{{ old('details.' . $detail->id . '.iva_percentage', $detail->iva_percentage ?? 13) }}"
                                             placeholder="13">
                                         <span class="input-group-addon">%</span>
                                     </div>
@@ -696,8 +697,21 @@
             }
 
             // Cambiar la acción del formulario para responder cotización
-            const form = document.querySelector('form');
+            const form = document.getElementById('order-main-form');
             form.action = '{{ route("pharmacy.orders.respond-quote", $order) }}';
+
+            // Eliminar cualquier input _method existente
+            const oldMethodInput = form.querySelector('input[name="_method"]');
+            if (oldMethodInput) {
+                oldMethodInput.remove();
+            }
+            // Crear y agregar el input _method con valor PUT
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'PUT';
+            form.appendChild(methodInput);
+
             form.submit();
         };
     });
