@@ -34,7 +34,7 @@ export default {
                         console.log(notification);
                         this.notifications.unshift(notification);
                         audio.play();
-                        if (notification.type === 'App\\Notifications\\NewOrderPharmacie') {
+                        if (notification.type === 'App\\Events\\PharmacyOrderUpdate') {
                             window.location.reload();
                         }
                     });
