@@ -1,5 +1,6 @@
 <template>
-    <span class="label label-warning pull-right" v-show="orderRequestNotifications.length">{{orderRequestNotifications.length }}</span>
+    <span class="label label-warning pull-right" v-show="orderRequestNotifications.length">{{
+        orderRequestNotifications.length }}</span>
 </template>
 <script>
 export default {
@@ -34,12 +35,11 @@ export default {
                         console.log(notification);
                         this.notifications.unshift(notification);
                         audio.play();
-                        if (notification.type === 'App\\Events\\PharmacyOrderUpdate') {
+                        if (window.location.pathname.includes('/pharmacy/orders')) {
                             window.location.reload();
                         }
                     });
             }
-
 
         },
 
@@ -60,4 +60,3 @@ export default {
     }
 };
 </script>
-
