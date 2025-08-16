@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Notifications\NewOrderPharmacie;
 
 class OrderController extends Controller
 {
@@ -134,6 +135,13 @@ class OrderController extends Controller
                 'details.drug:id,name,description'
             ]);
 
+            // Notificar a todos los usuarios de la farmacia sobre la nueva orden
+            $pharmacy = Pharmacy::with('users')->find($request->pharmacy_id);
+            if ($pharmacy && $pharmacy->users->count() > 0) {
+                foreach ($pharmacy->users as $pharmacyUser) {
+                    $pharmacyUser->notify(new NewOrderPharmacie($order));
+                }
+            }
             return response()->json([
                 'message' => 'Order created successfully',
                 'order' => $order

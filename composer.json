@@ -5,7 +5,7 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^8.4",
+        "php": "^8.2",
         "barryvdh/laravel-dompdf": "^v3.1.1",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "guzzlehttp/guzzle": "^7.9.3",

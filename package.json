@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -p \"[{name}]\" -c \"blue.bold,green.bold,red.bold\" \"npm:tailwind\" \"npm:vite:dev\" \"npm:php:queue\"",
+    "dev": "concurrently -k -p \"[{name}]\" -c \"blue.bold,green.bold,red.bold\" \"npm:tailwind\" \"npm:vite:dev\"",
+    "dev-full": "concurrently -k -p \"[{name}]\" -c \"blue.bold,green.bold,red.bold\" \"npm:tailwind\" \"npm:vite:dev\" \"npm:php:queue\"",
     "vite:dev": "vite",
     "build": "vite build",
     "php:serve": "php artisan serve",
