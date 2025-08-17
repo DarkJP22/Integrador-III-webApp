@@ -770,6 +770,9 @@ Route::get('/admin/medics', 'Admin\ReportsController@medics');
 Route::get('/admin/clinics', 'Admin\ReportsController@clinics');
 Route::get('/admin/patients', 'Admin\ReportsController@patients');
 Route::get('/admin/appointments', 'Admin\ReportsController@appointments');
+Route::get('/admin/reportsCommission/filter', 'Admin\ReportsController@searchByFilter');// Reporte por filtros  ordenes Comisiones grupo G1
+Route::get('/admin/reportsCommission', 'Admin\ReportsController@index'); // Reporte por ordenes Comisiones grupo G1
+Route::get('/admin/reportsCommission/{id}', 'Admin\ReportsController@show'); // Reporte por id  ordenes Comisiones grupo G1
 Route::get('/admin/annual-performance', 'Admin\ReportsController@annualPerformance');
 
 Route::post('/users/{user}/hacienda/conexion', 'HaciendaController@authToken');
