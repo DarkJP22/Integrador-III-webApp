@@ -53,7 +53,7 @@ class PharmacyOrderUpdateEventTest extends TestCase
         $this->assertCount(1, $channels);
         $this->assertInstanceOf(PrivateChannel::class, $channels[0]);
         
-        $expectedChannelName = 'private-order.' . $order->id . '.' . $order->user_id;
+        $expectedChannelName = 'private-App.User.' . $order->user_id;
         $this->assertEquals($expectedChannelName, $channels[0]->name);
     }
 

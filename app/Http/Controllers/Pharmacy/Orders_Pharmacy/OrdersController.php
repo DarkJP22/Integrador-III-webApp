@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use App\Jobs\SendAppNotificationJob;
 
 class OrdersController extends Controller
 {
@@ -310,13 +311,14 @@ class OrdersController extends Controller
             'order' => $order->toArray(),
             'orderDetails' => $order->details->toArray()
         ];
-
-        $this->sendNotification(
+        SendAppNotificationJob::dispatch('Estado de orden actualizado', "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.", [$user->push_token], $notificationData)->afterCommit();
+        /*$this->sendNotification(
             $user->push_token,
             'Estado de orden actualizado',
             "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.",
             $notificationData
-        );
+        );*/
+        
     }
 
     /**
