@@ -11,11 +11,13 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\ShippingRequired;
 use App\Events\PharmacyOrderUpdate;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 
 class OrdersController extends Controller
 {
@@ -275,7 +277,67 @@ class OrdersController extends Controller
         // Disparar evento de actualización de orden
         PharmacyOrderUpdate::dispatch(Auth::user(), $order);
 
+        // Notificar push al usuario de la orden si tiene push_token
+        $user = $order->user;
+        if ($user && $user->push_token) {
+            $statusText = is_object($order->status) && method_exists($order->status, 'label')
+                ? $order->status->label()
+                : (string) $order->status;
+            
+            // Cargar datos completos para enviar en la notificación
+            $order->load('details.drug');
+            $notificationData = [
+                'type' => 'order-update',
+                'order' => $order->toArray(),
+                'orderDetails' => $order->details->toArray()
+            ];
+            
+            $this->sendNotification(
+                $user->push_token,
+                'Estado de orden actualizado',
+                "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.",
+                $notificationData
+            );
+            Log::info("Notificación enviada a OneSignal para el usuario {$user->id}: {$statusText}");
+        } else {
+            Log::warning("El usuario {$user->id} no tiene un token de OneSignal.");
+        }
+
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden actualizada correctamente.');
+
+    }
+
+    /**
+     * Enviar notificación push a OneSignal
+     */
+    private function sendNotification($playerId, $title, $message, $data = null)
+    {
+        if (!$playerId) return;
+
+        try {
+            $payload = [
+                'app_id' => env('ONESIGNAL_APP_ID'),
+                'headings' => ['en' => $title],
+                'contents' => ['en' => $message],
+                'include_player_ids' => [$playerId],
+                'target_channel' => "push"
+            ];
+            
+            // Agregar datos adicionales si se proporcionan
+            if ($data) {
+                $payload['data'] = $data;
+            }
+            
+            Http::withHeaders([
+                'Authorization' => 'Basic ' . config('services.onesignal.api_key'),
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post(config('services.onesignal.url_api', 'https://onesignal.com/api/v1/notifications'), $payload);
+            
+            Log::info("Notificación enviada a OneSignal: {$title} - {$message}");
+        } catch (Exception $e) {
+            Log::error("Error enviando notificación OneSignal: " . $e->getMessage());
+        }
     }
 
     /**
