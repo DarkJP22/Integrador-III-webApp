@@ -120,6 +120,8 @@ export default {
                 // Escuchar eventos de actualización de órdenes
                 window.Echo.private(`App.User.${userId}`)
                     .listen('PharmacyOrderUpdate', () => {
+                        const audio = new Audio('/img/notification.mp3');
+                        audio.play().catch(e => console.log('No se pudo reproducir el audio:', e));
                         if (window.location.pathname.includes('/pharmacy/orders')) {
                             setTimeout(() => {
                                 window.location.reload();
