@@ -189,7 +189,7 @@ Route::get('/drugs/{drug}', 'Api\DrugController@show');//->middleware('auth:api'
 Route::get('/orders', 'Api\OrderController@index');//->middleware('auth:api');
 Route::post('/orders', 'Api\OrderController@store');//->middleware('auth:api');
 Route::get('/orders/{order}', 'Api\OrderController@show');//->middleware('auth:api');
-Route::put('/orders/{order}', 'Api\OrderController@update');//->middleware('auth:api');
+Route::put('/orders/{order}', 'Api\OrderController@update')->middleware('auth:api');
 Route::delete('/orders/{order}', 'Api\OrderController@destroy');//->middleware('auth:api');
 
 // Orders by pharmacy and user
