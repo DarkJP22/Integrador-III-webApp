@@ -12,12 +12,14 @@ class OrderDetail extends Model
         'requested_amount',
         'quantity_available',
         'unit_price',
+        'iva_percentage',
         'description',
         'products_total'
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
+        'iva_percentage' => 'decimal:2',
         'products_total' => 'decimal:2',
         'requested_amount' => 'integer',
         'quantity_available' => 'integer',

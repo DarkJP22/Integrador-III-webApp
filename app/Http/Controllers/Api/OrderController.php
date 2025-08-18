@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Notifications\NewOrderPharmacie;
+use App\Events\PharmacyOrderUpdate;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
@@ -134,6 +137,13 @@ class OrderController extends Controller
                 'details.drug:id,name,description'
             ]);
 
+            // Notificar a todos los usuarios de la farmacia sobre la nueva orden
+            $pharmacy = Pharmacy::with('users')->find($request->pharmacy_id);
+            if ($pharmacy && $pharmacy->users->count() > 0) {
+                foreach ($pharmacy->users as $pharmacyUser) {
+                    $pharmacyUser->notify(new NewOrderPharmacie($order));
+                }
+            }
             return response()->json([
                 'message' => 'Order created successfully',
                 'order' => $order
@@ -172,6 +182,11 @@ class OrderController extends Controller
             ],
             'shipping_total' => 'nullable|numeric|min:0',
             'voucher' => 'nullable|string',
+            'lat' => 'nullable|numeric|between:-90,90',
+            'lot' => 'nullable|numeric|between:-180,180',
+            'requires_shipping' => 'boolean',
+            'payment_method' => 'boolean',
+            'address' => 'nullable|string|max:500',
             'details' => 'sometimes|array',
             'details.*.id' => 'required|exists:order_details,id',
             'details.*.quantity_available' => 'nullable|integer|min:0',
@@ -187,7 +202,22 @@ class OrderController extends Controller
 
         return DB::transaction(function () use ($request, $order) {
             // Actualizar campos de la orden
-            $orderData = $request->only(['status', 'shipping_total', 'voucher']);
+            $orderData = $request->only([
+                'status', 
+                'shipping_total', 
+                'voucher', 
+                'lat', 
+                'lot', 
+                'requires_shipping', 
+                'payment_method', 
+                'address'
+            ]);
+            
+            // Filtrar solo los campos que no sean null/vacíos
+            $orderData = array_filter($orderData, function($value) {
+                return $value !== null && $value !== '';
+            });
+            
             if (!empty($orderData)) {
                 $order->update($orderData);
             }
@@ -239,6 +269,17 @@ class OrderController extends Controller
                 'pharmacy:id,name,address,phone',
                 'details.drug:id,name,description'
             ]);
+
+            // Disparar evento de actualización de orden usando el usuario de la orden
+            PharmacyOrderUpdate::dispatch($order->user, $order);
+            
+            // Notificar a todos los usuarios de la farmacia sobre la actualización de orden
+            $pharmacy = Pharmacy::with('users')->find($order->pharmacy_id);
+            if ($pharmacy && $pharmacy->users->count() > 0) {
+                foreach ($pharmacy->users as $pharmacyUser) {
+                    $pharmacyUser->notify(new NewOrderPharmacie($order));
+                }
+            }
 
             return response()->json([
                 'message' => 'Order updated successfully',

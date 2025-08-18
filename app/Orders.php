@@ -25,6 +25,10 @@ class Orders extends Model
         'lot',
         'order_total',
         'shipping_total',
+        'shipping_cost',        // Nuevo campo
+        'products_subtotal',    // Nuevo campo
+        'iva_total',           // Nuevo campo
+        'products_total',      // Nuevo campo
         'voucher'
     ];
 
@@ -35,6 +39,10 @@ class Orders extends Model
         'requires_shipping' => ShippingRequired::class,
         'order_total' => 'decimal:2',
         'shipping_total' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',        // Nuevo campo
+        'products_subtotal' => 'decimal:2',    // Nuevo campo
+        'iva_total' => 'decimal:2',           // Nuevo campo
+        'products_total' => 'decimal:2',      // Nuevo campo
         'lat' => 'decimal:8',
         'lot' => 'decimal:8',
     ];
@@ -55,12 +63,7 @@ class Orders extends Model
         return $this->hasMany(OrderDetail::class, 'order_id');
     }
 
-    // Accessors
-    public function getProductsTotalAttribute()
-    {
-        return $this->details->sum('products_total');
-    }
-
+    // Accessors básicos
     public function getPaymentMethodTextAttribute()
     {
         return $this->payment_method->label();

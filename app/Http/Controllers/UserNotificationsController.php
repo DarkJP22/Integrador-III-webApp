@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\User;
 
 class UserNotificationsController extends Controller
@@ -25,16 +26,55 @@ class UserNotificationsController extends Controller
 
     public function destroy(User $user, $notificationId)
     {
-        auth()->user()->notifications()->findOrFail($notificationId)->delete();//markAsRead();
+        try {
+            $notification = auth()->user()->notifications()->findOrFail($notificationId);
+            $notification->delete();
+            
+            return response()->json(['message' => 'Notification deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting notification: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'notification_id' => $notificationId
+            ]);
+            
+            return response()->json(['error' => 'Notification not found'], 404);
+        }
     }
 
     public function destroyByType(User $user, $type)
     {
-        auth()->user()->notifications()->where('type', 'App\\Notifications\\'.$type)->delete();//markAsRead();
+        try {
+            $deleted = auth()->user()->notifications()->where('type', 'App\\Notifications\\'.$type)->delete();
+            
+            return response()->json([
+                'message' => 'Notifications deleted successfully',
+                'deleted_count' => $deleted
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting notifications by type: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'type' => $type
+            ]);
+            
+            return response()->json(['error' => 'Error deleting notifications'], 500);
+        }
     }
 
     public function destroyAll(User $user)
     {
-        auth()->user()->notifications()->delete();//markAsRead();
+        try {
+            $deleted = auth()->user()->notifications()->delete();
+            
+            return response()->json([
+                'message' => 'All notifications deleted successfully',
+                'deleted_count' => $deleted
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting all notifications: ' . $e->getMessage(), [
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json(['error' => 'Error deleting notifications'], 500);
+        }
     }
 }

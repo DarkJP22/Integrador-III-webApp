@@ -36,7 +36,28 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'avatar_path', 'password', 'api_token', 'speciality_id', 'active', 'phone_number', 'phone_country_code', 'commission', 'medic_code', 'ide', 'push_token', 'fe', 'available_expedient', 'available_expedient_date', 'authorization_expedient_code', 'accumulated_affiliation', 'current_role_id', 'changed_password', 'disabled_by_payment', 'type_of_health_professional'
+        'name',
+        'email',
+        'avatar_path',
+        'password',
+        'api_token',
+        'speciality_id',
+        'active',
+        'phone_number',
+        'phone_country_code',
+        'commission',
+        'medic_code',
+        'ide',
+        'push_token',
+        'fe',
+        'available_expedient',
+        'available_expedient_date',
+        'authorization_expedient_code',
+        'accumulated_affiliation',
+        'current_role_id',
+        'changed_password',
+        'disabled_by_payment',
+        'type_of_health_professional'
     ];
     protected $appends = ['fullPhone'];
     /**
@@ -45,7 +66,11 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'api_token', 'push_token', 'authorization_expedient_code'
+        'password',
+        'remember_token',
+        'api_token',
+        'push_token',
+        'authorization_expedient_code'
     ];
 
     protected $casts = [
@@ -58,9 +83,9 @@ class User extends Authenticatable
         //$email = $email ? $email : auth()->user()->email;
 
         return static::where('phone_number', $phone)
-                      ->where('phone_country_code', $code)
-                      ->when($email, fn ($query) => $query->where('email', $email))
-                      ->firstOrFail();
+            ->where('phone_country_code', $code)
+            ->when($email, fn($query) => $query->where('email', $email))
+            ->firstOrFail();
     }
 
     public static function byEmail($email): User
@@ -229,22 +254,22 @@ class User extends Authenticatable
 
 
 
-//    public function settings()
-//    {
-//        return $this->hasOne(Setting::class);
-//    }
+    //    public function settings()
+    //    {
+    //        return $this->hasOne(Setting::class);
+    //    }
 
-//    /**
-//     * create a setting to user
-//     * @param null $profile
-//     * @return mixed
-//     */
-//    public function createSettings($setting = null)
-//    {
-//        $setting = ($setting) ? $setting : new Setting();
-//
-//        return $this->settings()->save($setting);
-//    }
+    //    /**
+    //     * create a setting to user
+    //     * @param null $profile
+    //     * @return mixed
+    //     */
+    //    public function createSettings($setting = null)
+    //    {
+    //        $setting = ($setting) ? $setting : new Setting();
+    //
+    //        return $this->settings()->save($setting);
+    //    }
 
     public function verifyOffice($office): bool
     {
@@ -367,7 +392,7 @@ class User extends Authenticatable
 
     public function isCurrentRole($role): bool
     {
-        if(!$this->hasRole($role)){
+        if (!$this->hasRole($role)) {
             return false;
         }
 
@@ -411,7 +436,7 @@ class User extends Authenticatable
 
     public function isMedicAssistant($user): bool
     {
-        if($user instanceof User){
+        if ($user instanceof User) {
             return $user->hasRole('medico');
         }
 
@@ -465,7 +490,7 @@ class User extends Authenticatable
 
     public function isClinicAssistant($user): bool
     {
-        if($user instanceof User){
+        if ($user instanceof User) {
             return $user->hasRole('clinica');
         }
         return User::find($user)->hasRole('clinica');
@@ -473,7 +498,7 @@ class User extends Authenticatable
 
     public function isPharmacyAssistant($user): bool
     {
-        if($user instanceof User){
+        if ($user instanceof User) {
             return $user->hasRole('farmacia');
         }
 
@@ -484,7 +509,7 @@ class User extends Authenticatable
     {
         return $this->hasRole('paciente');
     }
-    
+
     public function userRole(): string
     {
         $role = 'patient';
@@ -624,15 +649,14 @@ class User extends Authenticatable
 
     public function hasAuthorizationOf($patient): bool
     {
-        if($patient instanceof Patient){
+        if ($patient instanceof Patient) {
             $patient = $patient->id;
         }
 
         return DB::table('patient_user')
-                ->where('patient_id', $patient)
-                ->where('user_id', $this->id)
-                ->where('authorization', 1)->exists();
-
+            ->where('patient_id', $patient)
+            ->where('user_id', $this->id)
+            ->where('authorization', 1)->exists();
     }
 
     public function clinicsWithPermissionFe(): \Illuminate\Database\Eloquent\Collection
@@ -689,18 +713,16 @@ class User extends Authenticatable
 
     public function hasAccount($account): bool
     {
-        if($account instanceof User){
+        if ($account instanceof User) {
             $account = $account->id;
         }
 
         if ($this->isClinic() || $this->isLab()) {
 
-          return $this->subaccounts->contains('id', $account);
-
+            return $this->subaccounts->contains('id', $account);
         }
 
         return $this->accounts->contains('id', $account);
-
     }
 
     public function sendSMS($message): void
@@ -724,7 +746,7 @@ class User extends Authenticatable
                 );
 
                 Log::info($response);
-            } catch (RestException|ConfigurationException|TwilioException $e) {
+            } catch (RestException | ConfigurationException | TwilioException $e) {
 
                 Log::error($e->getMessage());
             }
@@ -805,20 +827,18 @@ class User extends Authenticatable
     {
         return Attribute::make(
             //get: fn ($value) => strtoupper($value),
-            set: fn ($value) => strtoupper($value),
+            set: fn($value) => strtoupper($value),
         );
     }
 
     public function affiliationUsers(): HasMany
     {
         return $this->hasMany(AffiliationUsers::class, 'user_id');
-
     }
     //Integrador:
     public function pharmacy()
     {
         return $this->hasOne(\App\Pharmacy::class, 'user_id', 'id');
-
     }
 
     public function orders(): HasMany

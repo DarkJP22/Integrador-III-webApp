@@ -76,23 +76,23 @@
                                         <span style="margin-right: 15px;">
                                             <strong>Pago:</strong>
                                             @foreach($paymentMethodOptions as $value => $label)
-                                                <label style="font-weight: normal; margin-left: 8px; margin-right: 10px;">
-                                                    <input type="checkbox" name="payment_method[]" value="{{ $value }}"
-                                                        {{ in_array($value, request('payment_method', [])) ? 'checked' : '' }}
-                                                        style="margin-right: 4px;">
-                                                    {{ $label }}
-                                                </label>
+                                            <label style="font-weight: normal; margin-left: 8px; margin-right: 10px;">
+                                                <input type="checkbox" name="payment_method[]" value="{{ $value }}"
+                                                    {{ in_array($value, request('payment_method', [])) ? 'checked' : '' }}
+                                                    style="margin-right: 4px;">
+                                                {{ $label }}
+                                            </label>
                                             @endforeach
                                         </span>
                                         <span>
                                             <strong>Envío:</strong>
                                             @foreach($shippingRequiredOptions as $value => $label)
-                                                <label style="font-weight: normal; margin-left: 8px; margin-right: 10px;">
-                                                    <input type="checkbox" name="requires_shipping[]" value="{{ $value }}"
-                                                        {{ in_array($value, request('requires_shipping', [])) ? 'checked' : '' }}
-                                                        style="margin-right: 4px;">
-                                                    {{ $label }}
-                                                </label>
+                                            <label style="font-weight: normal; margin-left: 8px; margin-right: 10px;">
+                                                <input type="checkbox" name="requires_shipping[]" value="{{ $value }}"
+                                                    {{ in_array($value, request('requires_shipping', [])) ? 'checked' : '' }}
+                                                    style="margin-right: 4px;">
+                                                {{ $label }}
+                                            </label>
                                             @endforeach
                                         </span>
                                     </div>
@@ -227,23 +227,6 @@
             });
         });
     });
-
-    // Escuchar eventos de nuevas órdenes
-    function listenPharmacyOrderUpdate() {
-        if (window.Echo && window.App && window.App.user && window.App.user.id) {
-            console.log('Registrando listener PharmacyOrderUpdate');
-            window.Echo.private(`App.User.${window.App.user.id}`)
-                .listen('PharmacyOrderUpdate', (e) => {
-                    alert('Recargando la página... Nueva orden: ' + (e.order_id || ''));
-                    console.log('Evento PharmacyOrderUpdate:', e);
-                    window.location.reload();
-                });
-        } else {
-            // Intenta de nuevo en 200ms
-            setTimeout(listenPharmacyOrderUpdate, 200);
-        }
-    }
-listenPharmacyOrderUpdate();
 </script>
 @endpush
 

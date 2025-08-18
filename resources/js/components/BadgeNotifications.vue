@@ -11,8 +11,19 @@ export default {
     },
     computed: {
         appointmentRequestNotifications() {
+            if (!Array.isArray(this.notifications)) {
+                return [];
+            }
+            
             return this.notifications.filter(notification => {
-                return notification.type === `App\\Notifications\\${this.type}`;
+                try {
+                    return notification && 
+                           typeof notification === 'object' &&
+                           notification.type === `App\\Notifications\\${this.type}`;
+                } catch (error) {
+                    console.error('Error en BadgeNotifications computed:', error);
+                    return false;
+                }
             });
         }
     },
@@ -26,38 +37,63 @@ export default {
         },
 
         listen() {
+            if (window.App && window.App.user && window.App.user.id) {
+                try {
+                    var audio = new Audio('/img/notification.mp3');
 
-            if (window.App.user.id) {
-
-                var audio = new Audio('/img/notification.mp3');
-
-                window.Echo.private(`App.User.${window.App.user.id}`)
-                    .notification((notification) => {
-                        console.log(notification);
-                        this.notifications.unshift(notification);
-                        audio.play();
-                    });
-
-
+                    window.Echo.private(`App.User.${window.App.user.id}`)
+                        .notification((notification) => {
+                            try {
+                                if (notification && typeof notification === 'object') {
+                                    if (!Array.isArray(this.notifications)) {
+                                        this.notifications = [];
+                                    }
+                                    this.notifications.unshift(notification);
+                                    audio.play().catch(e => console.log('No se pudo reproducir audio:', e));
+                                }
+                            } catch (error) {
+                                console.error('Error procesando notificación:', error);
+                            }
+                        })
+                        .error((error) => {
+                            console.error('Error en canal:', error);
+                        });
+                } catch (error) {
+                    console.error('Error configurando listeners:', error);
+                }
             }
-
-
         },
 
     },
 
     async created() {
-        this.listen();
+        try {
+            this.listen();
 
-        this.emitter.on('clearBadgeNotifications', (data) => {
-            console.log('clearBadgeNotifications', data);
-            this.clearNotifications(data.type);
-        });
+            if (this.emitter) {
+                this.emitter.on('clearBadgeNotifications', (data) => {
+                    if (data && data.type) {
+                        this.clearNotifications(data.type);
+                    }
+                });
+            }
 
-        const response = await axios.get('/profiles/' + window.App.user.id + '/notifications');
-        this.notifications = response.data;
-
-
+            if (window.App && window.App.user && window.App.user.id) {
+                try {
+                    const response = await axios.get('/profiles/' + window.App.user.id + '/notifications');
+                    if (response.data && Array.isArray(response.data)) {
+                        this.notifications = response.data;
+                    } else {
+                        this.notifications = [];
+                    }
+                } catch (error) {
+                    console.error('Error cargando notificaciones:', error);
+                    this.notifications = [];
+                }
+            }
+        } catch (error) {
+            console.error('Error en created:', error);
+        }
     }
 };
 </script>
