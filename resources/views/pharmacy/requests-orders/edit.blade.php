@@ -187,7 +187,7 @@
                                 <strong>Comprobante subido por el usuario</strong>
                                 <br><small class="text-muted">{{ basename($order->voucher) }}</small>
                             </div>
-                            <a href="{{ asset('storage/' . $order->voucher) }}" target="_blank" class="btn btn-info btn-sm">
+                            <a href="{{ route('pharmacy.orders.voucher', $order) }}" target="_blank" class="btn btn-info btn-sm">
                                 <i class="fa fa-eye"></i> Ver Comprobante
                             </a>
                         </div>
@@ -285,7 +285,8 @@
                                     <input type="number" step="1" min="0" max="{{ $detail->requested_amount }}"
                                         name="details[{{ $detail->id }}][quantity_available]"
                                         class="form-control quantity @error('details.' . $detail->id . '.quantity_available') is-invalid @enderror"
-                                        value="{{ old('details.' . $detail->id . '.quantity_available', $detail->quantity_available) }}">
+                                        value="{{ old('details.' . $detail->id . '.quantity_available', $detail->quantity_available) }}"
+                                        {{ in_array($order->status->value, ['preparando', 'despachado', 'cancelado']) ? 'readonly' : '' }}>
                                     @error('details.' . $detail->id . '.quantity_available')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -296,7 +297,8 @@
                                         <input type="number" step="0.01" min="0"
                                             name="details[{{ $detail->id }}][unit_price]"
                                             class="form-control price @error('details.' . $detail->id . '.unit_price') is-invalid @enderror"
-                                            value="{{ old('details.' . $detail->id . '.unit_price', $detail->unit_price) }}">
+                                            value="{{ old('details.' . $detail->id . '.unit_price', $detail->unit_price) }}"
+                                            {{ in_array($order->status->value, ['preparando', 'despachado', 'cancelado']) ? 'readonly' : '' }}>
                                     </div>
                                     @error('details.' . $detail->id . '.unit_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -308,7 +310,8 @@
                                             name="details[{{ $detail->id }}][iva_percentage]"
                                             class="form-control iva-percentage @error('details.' . $detail->id . '.iva_percentage') is-invalid @enderror"
                                             value="{{ old('details.' . $detail->id . '.iva_percentage', $detail->iva_percentage ?? 13) }}"
-                                            placeholder="13">
+                                            placeholder="13"
+                                            {{ in_array($order->status->value, ['preparando', 'despachado', 'cancelado']) ? 'readonly' : '' }}>
                                         <span class="input-group-addon">%</span>
                                     </div>
                                     @error('details.' . $detail->id . '.iva_percentage')
@@ -317,7 +320,7 @@
                                 </td>
                                 <td>
                                     <input type="text" class="form-control subtotal" style="background-color: #f4f4f4;"
-                                        value="₡0.00" readonly>
+                                        value="{{ number_format($detail->products_total, 2) }}" readonly>
                                 </td>
                             </tr>
                             @empty
@@ -343,7 +346,7 @@
                         <label>SubTotal de Productos (Sin IVA)</label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
-                            <input type="number" name="products_subtotal" id="products_subtotal" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
+                            <input type="number" name="products_subtotal" id="products_subtotal" class="form-control" style="background-color: #f4f4f4;" value="{{ number_format($order->products_subtotal, 2, '.', '') }}" readonly>
                         </div>
                     </div>
 
@@ -351,7 +354,7 @@
                         <label>Total IVA</label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
-                            <input type="number" name="total_iva" id="total_iva" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
+                            <input type="number" name="total_iva" id="total_iva" class="form-control" style="background-color: #f4f4f4;" value="{{ number_format($order->iva_total, 2, '.', '') }}" readonly>
                         </div>
                     </div>
 
@@ -359,24 +362,41 @@
                         <label>Total de Productos (Con IVA)</label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
-                            <input type="number" name="order_total" id="order_total" class="form-control" style="background-color: #f4f4f4;" value="0.00" readonly>
+                            <input type="number" name="products_total_display" id="products_total_display" class="form-control" style="background-color: #f4f4f4;" value="{{ number_format($order->products_total, 2, '.', '') }}" readonly>
                         </div>
                     </div>
                 </div>
                 
                 <div class="row">
-                    @if ($order->requiresShipping())
+                    @if ($order->requiresShipping() && ($order->status->value === 'cotizacion' || $order->status->value === 'confirmado'))
                     <div class="form-group col-md-6">
-                        <label>Costo de Envío</label>
+                        <label>Costo de Envío 
+                            @if($order->status->value === 'cotizacion')
+                                <small class="text-muted">(Establecer para responder cotización)</small>
+                            @else
+                                <small class="text-muted">(Editable para confirmar y preparar)</small>
+                            @endif
+                        </label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
                             <input type="number" step="0.01" min="0" name="shipping_cost" id="shipping_cost"
                                 class="form-control @error('shipping_cost') is-invalid @enderror"
-                                value="{{ old('shipping_cost', $order->shipping_total - $order->order_total) }}">
+                                value="{{ number_format($order->shipping_cost, 2, '.', '') }}">
                         </div>
                         @error('shipping_cost')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+                    @elseif ($order->requiresShipping())
+                    <div class="form-group col-md-6">
+                        <label>Costo de Envío</label>
+                        <div class="input-group">
+                            <span class="input-group-addon">₡</span>
+                            <input type="number" class="form-control" 
+                                value="{{ number_format($order->shipping_cost, 2, '.', '') }}" 
+                                style="background-color: #f4f4f4;" readonly>
+                        </div>
+                        <small class="text-muted">Costo establecido al confirmar la orden</small>
                     </div>
                     @endif
 
@@ -384,8 +404,8 @@
                         <label><strong>{{ $order->requiresShipping() ? 'Total Final con Envío' : 'Total Final' }}</strong></label>
                         <div class="input-group">
                             <span class="input-group-addon">₡</span>
-                            <input type="number" name="shipping_total" id="shipping_total"
-                                class="form-control" style="background-color: #d4edda; font-weight: bold;" value="0.00" readonly>
+                            <input type="number" name="order_total" id="order_total"
+                                class="form-control" style="background-color: #d4edda; font-weight: bold;" value="{{ number_format($order->order_total, 2, '.', '') }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -405,37 +425,19 @@
                                 <i class="fa fa-paper-plane"></i> Responder Cotización
                             </button>
                         @elseif($order->status->value === 'confirmado')
-                            {{-- Botón de Confirmar y Preparar fuera del formulario --}}
-                            </form>
-                            <form action="{{ route('pharmacy.orders.confirm-payment', $order) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('PUT')
+                            <button type="button" class="btn btn-success btn-lg" onclick="confirmAndPrepare()">
                                 @if($order->isElectronicPayment() && $order->voucher)
-                                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('⚠️ IMPORTANTE: Antes de continuar, asegúrese de haber revisado el comprobante de pago.\n\n¿Confirmar el pago y cambiar el estado a Preparando?')">
-                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
-                                    </button>
+                                    <i class="fa fa-check-circle"></i> Confirmar y Preparar
                                 @elseif($order->isElectronicPayment() && !$order->voucher)
-                                    <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('¿Confirmar como pago efectivo y cambiar el estado a Preparando?')">
-                                        <i class="fa fa-money"></i> Confirmar Pago Efectivo
-                                    </button>
+                                    <i class="fa fa-money"></i> Confirmar Pago Efectivo
                                 @else
-                                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('¿Confirmar y cambiar el estado a Preparando?')">
-                                        <i class="fa fa-check-circle"></i> Confirmar y Preparar
-                                    </button>
+                                    <i class="fa fa-check-circle"></i> Confirmar y Preparar
                                 @endif
-                            </form>
-                            <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST" style="display: none;">
+                            </button>
                         @elseif($order->status->value === 'preparando')
-                            {{-- Botón de Marcar como Despachada fuera del formulario --}}
-                            </form>
-                            <form action="{{ route('pharmacy.orders.mark-dispatched', $order) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('¿Marcar como despachada?')">
-                                    <i class="fa fa-truck"></i> Marcar como Despachada
-                                </button>
-                            </form>
-                            <form action="{{ route('pharmacy.orders.update', $order) }}" method="POST" style="display: none;">
+                            <button type="button" class="btn btn-warning btn-lg" onclick="markAsDispatched()">
+                                <i class="fa fa-truck"></i> Marcar como Despachada
+                            </button>
                         @elseif(in_array($order->status->value, ['esperando_confirmacion', 'despachado', 'cancelado']))
                             <button type="submit" class="btn btn-default" onclick="return confirm('¿Está seguro de actualizar esta orden?')">
                                 <i class="fa fa-save"></i> Guardar Cambios
@@ -458,8 +460,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const shippingInput = document.getElementById('shipping_cost');
-        const shippingTotalInput = document.getElementById('shipping_total');
         const orderTotalInput = document.getElementById('order_total');
+        const productsDisplayInput = document.getElementById('products_total_display');
         const subtotalInput = document.getElementById('products_subtotal');
         const totalIvaInput = document.getElementById('total_iva');
 
@@ -497,9 +499,7 @@
                 showAlert('La cantidad disponible no puede ser mayor a la solicitada', 'warning');
             }
 
-            // Aplicar la lógica de negocio:
-            // Si cantidad solicitada > disponible, usar disponible
-            // Si cantidad solicitada <= disponible, usar solicitada
+            // Usar la menor cantidad entre solicitada y disponible
             const cantidadParaCalculo = Math.min(cantidadSolicitada, cantidadDisponible);
 
             // Calcular subtotal sin IVA
@@ -522,48 +522,91 @@
         }
 
         function calcularTotales() {
+            // Si la orden está en preparando o posterior, usar valores de BD
+            const orderStatus = '{{ $order->status->value }}';
+            if (['preparando', 'despachado', 'cancelado'].includes(orderStatus)) {
+                // Usar valores de la base de datos
+                const dbSubtotal = {{ $order->products_subtotal ?? 0 }};
+                const dbIvaTotal = {{ $order->iva_total ?? 0 }};
+                const dbProductsTotal = {{ $order->products_total ?? 0 }};
+                const dbShippingCost = {{ $order->shipping_cost ?? 0 }};
+                const dbOrderTotal = {{ $order->order_total ?? 0 }};
+
+                // Actualizar campos con valores de BD
+                if (subtotalInput) subtotalInput.value = dbSubtotal.toFixed(2);
+                if (totalIvaInput) totalIvaInput.value = dbIvaTotal.toFixed(2);
+                if (productsDisplayInput) productsDisplayInput.value = dbProductsTotal.toFixed(2);
+                if (orderTotalInput) orderTotalInput.value = dbOrderTotal.toFixed(2);
+                return;
+            }
+
+            // Lógica de cálculo normal para estados editables
             let subtotalGeneral = 0;
             let totalIvaGeneral = 0;
             let totalConIvaGeneral = 0;
 
+            // Calcular desde los detalles de la tabla
             document.querySelectorAll('tbody tr').forEach(fila => {
                 const cantidadInput = fila.querySelector('.quantity');
                 const precioInput = fila.querySelector('.price');
                 const ivaInput = fila.querySelector('.iva-percentage');
+                const filaSubtotalInput = fila.querySelector('.subtotal');
 
-                if (cantidadInput && precioInput && ivaInput) {
-                    const resultado = calcularFila(fila);
-                    subtotalGeneral += resultado.subtotal;
-                    totalIvaGeneral += resultado.iva;
-                    totalConIvaGeneral += resultado.total;
+                if (cantidadInput && precioInput && ivaInput && filaSubtotalInput) {
+                    // Obtener la cantidad solicitada desde la celda correspondiente
+                    const cantidadSolicitadaCell = fila.cells[2];
+                    const labelElement = cantidadSolicitadaCell.querySelector('.label');
+                    const cantidadSolicitadaText = labelElement ? labelElement.textContent : cantidadSolicitadaCell.textContent;
+                    const cantidadSolicitada = parseFloat(cantidadSolicitadaText.trim()) || 0;
+
+                    const cantidadDisponible = parseFloat(cantidadInput.value) || 0;
+                    const precio = parseFloat(precioInput.value) || 0;
+                    const ivaPercentage = parseFloat(ivaInput.value) || 0;
+
+                    // Validar que la cantidad disponible no exceda la solicitada
+                    if (cantidadDisponible > cantidadSolicitada) {
+                        cantidadInput.value = cantidadSolicitada;
+                        showAlert('La cantidad disponible no puede ser mayor a la solicitada', 'warning');
+                    }
+
+                    // Usar la menor cantidad entre solicitada y disponible
+                    const cantidadParaCalculo = Math.min(cantidadSolicitada, cantidadDisponible);
+
+                    // Calcular subtotal sin IVA
+                    const subtotalSinIva = cantidadParaCalculo * precio;
+                    
+                    // Calcular IVA individual para este producto
+                    const ivaAmount = subtotalSinIva * (ivaPercentage / 100);
+                    
+                    // Total con IVA para este producto
+                    const totalConIva = subtotalSinIva + ivaAmount;
+
+                    // Mostrar el total con IVA en la celda
+                    filaSubtotalInput.value = formatCurrency(totalConIva);
+                    
+                    // Sumar a los totales generales
+                    subtotalGeneral += subtotalSinIva;
+                    totalIvaGeneral += ivaAmount;
+                    totalConIvaGeneral += totalConIva;
                 }
             });
 
+            // Obtener costo de envío
             const shipping = parseFloat(shippingInput?.value) || 0;
             const totalFinal = totalConIvaGeneral + shipping;
 
-            // Actualizar campos
+            // Actualizar todos los campos
             if (subtotalInput) subtotalInput.value = subtotalGeneral.toFixed(2);
             if (totalIvaInput) totalIvaInput.value = totalIvaGeneral.toFixed(2);
-            if (orderTotalInput) orderTotalInput.value = totalConIvaGeneral.toFixed(2);
-            if (shippingTotalInput) shippingTotalInput.value = totalFinal.toFixed(2);
-
-            // Actualizar badges de estado
-            updateTotalBadges(subtotalGeneral, totalIvaGeneral, totalConIvaGeneral, totalFinal);
+            if (productsDisplayInput) productsDisplayInput.value = totalConIvaGeneral.toFixed(2);
+            if (orderTotalInput) orderTotalInput.value = totalFinal.toFixed(2);
         }
 
         function updateTotalBadges(subtotal, totalIVA, totalConIVA, totalFinal) {
-            // Log para debugging
-            console.log('Totales calculados:', {
-                subtotal: subtotal.toFixed(2),
-                totalIVA: totalIVA.toFixed(2),
-                totalConIVA: totalConIVA.toFixed(2),
-                totalFinal: totalFinal.toFixed(2)
-            });
+            // Función mantenida para compatibilidad
         }
 
         function showAlert(message, type = 'info') {
-            // Función simple para mostrar alertas compatibles
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type} alert-dismissible`;
             alertDiv.style.position = 'fixed';
@@ -587,50 +630,57 @@
         }
 
         function initializeEventListeners() {
-            // Event listeners para cantidad, precio e IVA
-            document.querySelectorAll('.quantity, .price, .iva-percentage').forEach(input => {
-                input.addEventListener('input', function() {
-                    // Validar valores negativos
-                    if (parseFloat(this.value) < 0) {
-                        this.value = 0;
-                    }
-                    
-                    // Validar IVA máximo 100%
-                    if (this.classList.contains('iva-percentage') && parseFloat(this.value) > 100) {
-                        this.value = 100;
-                        showAlert('El IVA no puede ser mayor al 100%', 'warning');
-                    }
-                    
-                    calcularTotales();
+            // Solo agregar listeners si la orden es editable
+            const orderStatus = '{{ $order->status->value }}';
+            const isEditable = !['preparando', 'despachado', 'cancelado'].includes(orderStatus);
+
+            if (isEditable) {
+                // Event listeners para cantidad, precio e IVA
+                document.querySelectorAll('.quantity, .price, .iva-percentage').forEach(input => {
+                    input.addEventListener('input', function() {
+                        // Validar valores negativos
+                        if (parseFloat(this.value) < 0) {
+                            this.value = 0;
+                        }
+                        
+                        // Validar IVA máximo 100%
+                        if (this.classList.contains('iva-percentage') && parseFloat(this.value) > 100) {
+                            this.value = 100;
+                            showAlert('El IVA no puede ser mayor al 100%', 'warning');
+                        }
+                        
+                        calcularTotales();
+                    });
+
+                    input.addEventListener('blur', function() {
+                        // Formatear valor al perder el foco
+                        if (this.classList.contains('price') && this.value) {
+                            this.value = parseFloat(this.value).toFixed(2);
+                        }
+                        if (this.classList.contains('iva-percentage') && this.value) {
+                            this.value = parseFloat(this.value).toFixed(2);
+                        }
+                    });
                 });
 
-                input.addEventListener('blur', function() {
-                    // Formatear valor al perder el foco
-                    if (this.classList.contains('price') && this.value) {
-                        this.value = parseFloat(this.value).toFixed(2);
-                    }
-                    if (this.classList.contains('iva-percentage') && this.value) {
-                        this.value = parseFloat(this.value).toFixed(2);
-                    }
-                });
-            });
-
-            // Event listener para envío
-            if (shippingInput) {
-                shippingInput.addEventListener('input', function() {
-                    if (parseFloat(this.value) < 0) {
-                        this.value = 0;
-                    }
-                    calcularTotales();
-                });
+                // Event listener para envío
+                if (shippingInput) {
+                    shippingInput.addEventListener('input', function() {
+                        if (parseFloat(this.value) < 0) {
+                            this.value = 0;
+                        }
+                        calcularTotales();
+                    });
+                }
             }
         }
 
-        // Inicializar
+        // Inicializar event listeners
         initializeEventListeners();
+        
+        // Calcular totales al cargar la página
         calcularTotales();
-
-        // Agregar validación antes del submit
+        // Validación antes del submit
         document.querySelector('form').addEventListener('submit', function(e) {
             const hasProducts = document.querySelectorAll('.quantity').length > 0;
             const hasValidQuantities = Array.from(document.querySelectorAll('.quantity')).some(input => parseFloat(input.value) > 0);
@@ -641,7 +691,7 @@
                 return false;
             }
 
-            // Validar que todos los productos tengan precios e IVA válidos
+            // Validar precios e IVA para productos con cantidad
             const quantities = document.querySelectorAll('.quantity');
             const prices = document.querySelectorAll('.price');
             const ivas = document.querySelectorAll('.iva-percentage');
@@ -699,6 +749,76 @@
             // Cambiar la acción del formulario para responder cotización
             const form = document.getElementById('order-main-form');
             form.action = '{{ route("pharmacy.orders.respond-quote", $order) }}';
+
+            // Eliminar cualquier input _method existente
+            const oldMethodInput = form.querySelector('input[name="_method"]');
+            if (oldMethodInput) {
+                oldMethodInput.remove();
+            }
+            // Crear y agregar el input _method con valor PUT
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'PUT';
+            form.appendChild(methodInput);
+
+            form.submit();
+        };
+
+        // Función para confirmar y preparar orden
+        window.confirmAndPrepare = function() {
+            // Validar que el shipping_cost esté establecido si la orden requiere envío
+            const shippingInput = document.getElementById('shipping_cost');
+            const requiresShipping = {{ $order->requiresShipping() ? 'true' : 'false' }};
+            
+            if (requiresShipping && shippingInput && (!shippingInput.value || parseFloat(shippingInput.value) < 0)) {
+                showAlert('Debe establecer un costo de envío válido antes de confirmar', 'error');
+                return;
+            }
+
+            const isElectronic = {{ $order->isElectronicPayment() ? 'true' : 'false' }};
+            const hasVoucher = {{ $order->voucher ? 'true' : 'false' }};
+            
+            let confirmMessage = '¿Confirmar el pago y cambiar el estado a Preparando?';
+            
+            if (isElectronic && hasVoucher) {
+                confirmMessage = '⚠️ IMPORTANTE: Antes de continuar, asegúrese de haber revisado el comprobante de pago.\n\n¿Confirmar el pago y cambiar el estado a Preparando?';
+            } else if (isElectronic && !hasVoucher) {
+                confirmMessage = '¿Confirmar como pago efectivo y cambiar el estado a Preparando?';
+            }
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Cambiar la acción del formulario para confirmar pago
+            const form = document.getElementById('order-main-form');
+            form.action = '{{ route("pharmacy.orders.confirm-payment", $order) }}';
+
+            // Eliminar cualquier input _method existente
+            const oldMethodInput = form.querySelector('input[name="_method"]');
+            if (oldMethodInput) {
+                oldMethodInput.remove();
+            }
+            // Crear y agregar el input _method con valor PUT
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'PUT';
+            form.appendChild(methodInput);
+
+            form.submit();
+        };
+
+        // Función para marcar como despachada
+        window.markAsDispatched = function() {
+            if (!confirm('¿Está seguro de marcar esta orden como despachada?')) {
+                return;
+            }
+
+            // Cambiar la acción del formulario para marcar como despachada
+            const form = document.getElementById('order-main-form');
+            form.action = '{{ route("pharmacy.orders.mark-dispatched", $order) }}';
 
             // Eliminar cualquier input _method existente
             const oldMethodInput = form.querySelector('input[name="_method"]');

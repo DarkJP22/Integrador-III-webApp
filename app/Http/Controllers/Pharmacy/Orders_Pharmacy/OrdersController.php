@@ -11,6 +11,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\ShippingRequired;
 use App\Events\PharmacyOrderUpdate;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -95,7 +96,7 @@ class OrdersController extends Controller
 
         // Formatear fechas para todas las órdenes
         $orders->getCollection()->transform(function ($order) {
-            $order->formatted_date = $order->date ? \Carbon\Carbon::parse($order->date)->format('d/m/Y H:i') : 'N/A';
+            $order->formatted_date = $order->date ? Carbon::parse($order->date)->format('d/m/Y H:i') : 'N/A';
             return $order;
         });
 
@@ -105,9 +106,9 @@ class OrdersController extends Controller
         $shippingRequiredOptions = ShippingRequired::getOptions();
 
         return view('pharmacy.requests-orders.index', compact(
-            'orders', 
-            'statusOptions', 
-            'paymentMethodOptions', 
+            'orders',
+            'statusOptions',
+            'paymentMethodOptions',
             'shippingRequiredOptions'
         ));
     }
@@ -125,7 +126,7 @@ class OrdersController extends Controller
 
         return view('pharmacy.requests-orders.create', compact(
             'statusOptions',
-            'paymentMethodOptions', 
+            'paymentMethodOptions',
             'shippingRequiredOptions'
         ));
     }
@@ -209,7 +210,7 @@ class OrdersController extends Controller
         return view('pharmacy.requests-orders.edit', compact(
             'order',
             'statusOptions',
-            'paymentMethodOptions', 
+            'paymentMethodOptions',
             'shippingRequiredOptions'
         ));
     }
@@ -252,7 +253,7 @@ class OrdersController extends Controller
                         'quantity_available' => $cantidadDisponible,
                         'unit_price' => $precio,
                         'iva_percentage' => $ivaPercentage,
-                        'products_total' => $totalProductoConIva, // Guardamos el total con IVA
+                        'products_total' => $totalProductoConIva,
                     ]);
 
                     $subtotalSinIva += $subtotalProducto;
@@ -261,50 +262,61 @@ class OrdersController extends Controller
             }
 
             // Calcular totales finales
-            $totalConIVA = $subtotalSinIva + $totalIva;
-            $shippingCost = floatval($request->input('shipping_cost', 0));
-            $totalConEnvio = $totalConIVA + $shippingCost;
+            $productsTotal = $subtotalSinIva + $totalIva;
+            
+            // Preservar shipping_cost existente - no debe cambiar en update
+            $shippingCost = $order->shipping_cost ?? 0;
+            $finalTotal = $productsTotal + $shippingCost;
 
             // Actualizar la orden
             $order->update([
                 'status' => $validated['status'],
-                'order_total' => $totalConIVA,
-                'shipping_total' => $totalConEnvio,
+                'products_subtotal' => $subtotalSinIva,
+                'iva_total' => $totalIva,
+                'products_total' => $productsTotal,
                 'shipping_cost' => $shippingCost,
+                'order_total' => $finalTotal,
+                'shipping_total' => $finalTotal,
             ]);
         });
 
         // Disparar evento de actualización de orden
         PharmacyOrderUpdate::dispatch(Auth::user(), $order);
 
-        // Notificar push al usuario de la orden si tiene push_token
-        $user = $order->user;
-        if ($user && $user->push_token) {
-            $statusText = is_object($order->status) && method_exists($order->status, 'label')
-                ? $order->status->label()
-                : (string) $order->status;
-            
-            // Cargar datos completos para enviar en la notificación
-            $order->load('details.drug');
-            $notificationData = [
-                'type' => 'order-update',
-                'order' => $order->toArray(),
-                'orderDetails' => $order->details->toArray()
-            ];
-            
-            $this->sendNotification(
-                $user->push_token,
-                'Estado de orden actualizado',
-                "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.",
-                $notificationData
-            );
-            Log::info("Notificación enviada a OneSignal para el usuario {$user->id}: {$statusText}");
-        } else {
-            Log::warning("El usuario {$user->id} no tiene un token de OneSignal.");
-        }
+        // Notificar push al usuario si tiene token
+        $this->sendPushNotification($order);
 
         return redirect()->route('pharmacy.orders.index')->with('success', 'Orden actualizada correctamente.');
+    }
 
+    /**
+     * Enviar notificación push al usuario de la orden
+     */
+    private function sendPushNotification(Orders $order)
+    {
+        $user = $order->user;
+        if (!$user || !$user->push_token) {
+            return;
+        }
+
+        $statusText = is_object($order->status) && method_exists($order->status, 'label')
+            ? $order->status->label()
+            : (string) $order->status;
+
+        // Cargar datos completos para enviar en la notificación
+        $order->load('details.drug');
+        $notificationData = [
+            'type' => 'order-update',
+            'order' => $order->toArray(),
+            'orderDetails' => $order->details->toArray()
+        ];
+
+        $this->sendNotification(
+            $user->push_token,
+            'Estado de orden actualizado',
+            "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.",
+            $notificationData
+        );
     }
 
     /**
@@ -322,19 +334,17 @@ class OrdersController extends Controller
                 'include_player_ids' => [$playerId],
                 'target_channel' => "push"
             ];
-            
-            // Agregar datos adicionales si se proporcionan
+
             if ($data) {
                 $payload['data'] = $data;
             }
-            
+
             Http::withHeaders([
                 'Authorization' => 'Basic ' . config('services.onesignal.api_key'),
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->post(config('services.onesignal.url_api', 'https://onesignal.com/api/v1/notifications'), $payload);
-            
-            Log::info("Notificación enviada a OneSignal: {$title} - {$message}");
+
         } catch (Exception $e) {
             Log::error("Error enviando notificación OneSignal: " . $e->getMessage());
         }
@@ -355,7 +365,6 @@ class OrdersController extends Controller
         }
 
         $validated = $request->validate([
-            'shipping_cost' => 'nullable|numeric|min:0',
             'details' => 'array',
             'details.*.quantity_available' => 'required|numeric|min:0',
             'details.*.unit_price' => 'required|numeric|min:0',
@@ -393,16 +402,17 @@ class OrdersController extends Controller
             }
 
             // Calcular totales finales
-            $totalConIVA = $subtotalSinIva + $totalIva;
-            $shippingCost = floatval($request->input('shipping_cost', 0));
-            $totalConEnvio = $totalConIVA + $shippingCost;
+            $productsTotal = $subtotalSinIva + $totalIva;
 
             // Actualizar la orden y cambiar estado automáticamente
             $order->update([
                 'status' => OrderStatus::ESPERANDO_CONFIRMACION,
-                'order_total' => $totalConIVA,
-                'shipping_total' => $totalConEnvio,
-                'shipping_cost' => $shippingCost
+                'products_subtotal' => $subtotalSinIva,     // Subtotal sin IVA
+                'iva_total' => $totalIva,                   // Total de IVA
+                'products_total' => $productsTotal,         // Total productos con IVA
+                'shipping_cost' => 0,                       // Sin shipping aún
+                'order_total' => $productsTotal,            // Solo productos por ahora
+                'shipping_total' => $productsTotal,         // Sin shipping aún
             ]);
         });
 
@@ -415,7 +425,7 @@ class OrdersController extends Controller
     /**
      * Confirmar método de pago y cambiar a estado 'preparando'
      */
-    public function confirmPayment(Orders $order)
+    public function confirmPayment(Request $request, Orders $order)
     {
         $this->validatePharmacyAccess($order);
 
@@ -428,14 +438,35 @@ class OrdersController extends Controller
             return redirect()->back()->with('error', 'No se ha subido el comprobante SINPE.');
         }
 
+        // Validar shipping_cost si la orden requiere envío
+        $validated = $request->validate([
+            'shipping_cost' => $order->requiresShipping() ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+        ]);
+
         try {
-            $order->update(['status' => OrderStatus::PREPARANDO]);
-            
+            // Calcular shipping_cost solo si la orden requiere envío
+            $shippingCost = 0;
+            if ($order->requiresShipping()) {
+                $shippingCost = floatval($validated['shipping_cost']);
+            }
+
+            // Recalcular totales con el shipping_cost
+            $productsTotal = $order->products_total ?? 0;
+            $finalTotal = $productsTotal + $shippingCost;
+
+            $order->update([
+                'status' => OrderStatus::PREPARANDO,
+                'shipping_cost' => $shippingCost,
+                'order_total' => $finalTotal,
+                'shipping_total' => $finalTotal,
+            ]);
+
             // Disparar evento de actualización de orden
             PharmacyOrderUpdate::dispatch(Auth::user(), $order);
-            
+
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Pago confirmado. La orden está ahora en preparación.');
         } catch (\Exception $e) {
+            Log::error('Error confirming payment:', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Error al confirmar el pago. Intente nuevamente.');
         }
     }
@@ -453,14 +484,64 @@ class OrdersController extends Controller
 
         try {
             $order->update(['status' => OrderStatus::DESPACHADO]);
-            
+
             // Disparar evento de actualización de orden
             PharmacyOrderUpdate::dispatch(Auth::user(), $order);
-            
+
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Orden marcada como despachada exitosamente.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al marcar como despachada. Intente nuevamente.');
         }
+    }
+
+    /**
+     * Mostrar el voucher de la orden de forma segura
+     */
+    public function showVoucher(Orders $order)
+    {
+        $this->validatePharmacyAccess($order);
+
+        if (!$order->voucher) {
+            abort(404, 'No se encontró el voucher para esta orden.');
+        }
+
+        // Si es una imagen en base64
+        if (strpos($order->voucher, 'data:image/') === 0) {
+            // Extraer el tipo de imagen y los datos base64
+            preg_match('/data:image\/([^;]+);base64,(.*)/', $order->voucher, $matches);
+            
+            if (count($matches) !== 3) {
+                abort(404, 'Formato de voucher inválido.');
+            }
+            
+            $imageType = $matches[1];
+            $base64Data = $matches[2];
+            $imageData = base64_decode($base64Data);
+            
+            if ($imageData === false) {
+                abort(404, 'Error al decodificar el voucher.');
+            }
+            
+            $mimeType = 'image/' . $imageType;
+            
+            return response($imageData)
+                ->header('Content-Type', $mimeType)
+                ->header('Content-Disposition', 'inline; filename="voucher_' . $order->consecutive . '.' . $imageType . '"');
+        }
+        
+        // Si es una ruta de archivo (comportamiento anterior)
+        $path = storage_path('app/public/' . $order->voucher);
+        
+        if (!file_exists($path)) {
+            abort(404, 'El archivo del voucher no existe.');
+        }
+
+        $mimeType = mime_content_type($path);
+        
+        return response()->file($path, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="voucher_' . $order->consecutive . '"'
+        ]);
     }
 
     /**

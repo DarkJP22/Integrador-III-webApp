@@ -664,6 +664,7 @@ Route::prefix('pharmacy')->group(function () {
     Route::put('orders/{order}/respond-quote', [OrdersController::class, 'respondQuote'])->name('pharmacy.orders.respond-quote');
     Route::put('orders/{order}/confirm-payment', [OrdersController::class, 'confirmPayment'])->name('pharmacy.orders.confirm-payment');
     Route::put('orders/{order}/mark-dispatched', [OrdersController::class, 'markAsDispatched'])->name('pharmacy.orders.mark-dispatched');
+    Route::get('orders/{order}/voucher', [OrdersController::class, 'showVoucher'])->name('pharmacy.orders.voucher');
 });
 
 //admins

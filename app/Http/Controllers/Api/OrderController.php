@@ -270,14 +270,16 @@ class OrderController extends Controller
                 'details.drug:id,name,description'
             ]);
 
-            // Disparar evento de actualización de orden si hay un usuario autenticado
-            PharmacyOrderUpdate::dispatch(Auth::user(), $order);
-            /*$pharmacy = Pharmacy::with('users')->find($request->pharmacy_id);
+            // Disparar evento de actualización de orden usando el usuario de la orden
+            PharmacyOrderUpdate::dispatch($order->user, $order);
+            
+            // Notificar a todos los usuarios de la farmacia sobre la actualización de orden
+            $pharmacy = Pharmacy::with('users')->find($order->pharmacy_id);
             if ($pharmacy && $pharmacy->users->count() > 0) {
                 foreach ($pharmacy->users as $pharmacyUser) {
                     $pharmacyUser->notify(new NewOrderPharmacie($order));
                 }
-            }*/
+            }
 
             return response()->json([
                 'message' => 'Order updated successfully',

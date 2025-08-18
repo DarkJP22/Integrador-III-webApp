@@ -18,7 +18,7 @@
         <ul class="sidebar-menu" data-widget="tree">
             <li class="header">MENU</li>
             <li><a href="{{ url('/')}}"><i class="fa fa-home"></i> <span>Home</span></a></li>
-            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span><order-badge-Notifications type="NewOrderPharmacie"></order-badge-Notifications></a></li> <!--ruta de proformas/ordenes-->
+            <li><a href="{{ url('/pharmacy/orders')}}"><i class="fa fa-shopping-cart"></i> <span>Órdenes</span><order-badge-notifications type="NewOrderPharmacie"></order-badge-notifications></a></li> <!--ruta de proformas/ordenes-->
             {{-- <li>--}}
             {{-- <a href="{{ url('/lab/appointment-requests/register?pharmacy_code=' . auth()->user()->pharmacies?->first()?->id) }}"--}}
             {{-- target="_blank"><i--}}
