@@ -170,10 +170,7 @@
 
                                     <p>Es un usuario afiliado</p>
   
-                                        <label>
-                                        <input type="checkbox" v-model="applyDiscountAffiliate" />
-                                     Aplicar descuento de afiliación
-                                      </label>
+                                      
                                       </div>
 
                                 <div class="form-row">
@@ -1204,8 +1201,9 @@ export default {
                         }
                     }
                     //Modificación para determinar si el paciente cuenta con un plan de afiliación grupo g1
-                    if(data['affiliation']){
+                    if(data['affiliation'] && data['acceptedDiscountAffiliation'] == 1){
                         this.isAffiliateUser = true;
+                        this.applyDiscountAffiliate = true;
                         this.discountsAffiliate = data['affiliation'].discount;
                     }
                   //Fin de las modificaciones para determinar si el paciente cuenta con un plan de afiliación grupo g1

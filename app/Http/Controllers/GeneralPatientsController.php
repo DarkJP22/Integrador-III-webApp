@@ -11,6 +11,7 @@ use App\Repositories\PatientRepository;
 use App\Patient;
 use App\Services\FarmaciaService;
 use App\Setting;
+use App\User;
 use Illuminate\Support\Carbon;
 
 class GeneralPatientsController extends Controller
@@ -93,8 +94,8 @@ $affiliation = $idAffiliation
                       ->where('active', "Approved")
                       ->first()
     : null;
-
-    //Fin de la modificación del grupo G1
+$acceptedDiscountAffiliation = auth()->user()->accept_affiliates ;
+//Fin de la modificación del grupo G1
         $result = [
             'patient' => $patient,
             'isPatient' => $patient ? true : false,
@@ -106,6 +107,7 @@ $affiliation = $idAffiliation
                                     ->where('to', $to)->get()->first(),
             'lab_exam_discount' => Setting::getSetting('lab_exam_discount') ?? 0,
             'affiliation' => $affiliation, // Modificación del grupo G1
+            'acceptedDiscountAffiliation' => $acceptedDiscountAffiliation, // Modificación del grupo G1
         ];
 
         return $result;

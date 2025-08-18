@@ -9,6 +9,7 @@ use App\RequestOffice;
 use App\AffiliationUsers;
 use Edujugon\PushNotification\PushNotification;
 use App\Notifications\ClinicIntegrated;
+use App\User;
 use GuzzleHttp\Client;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
@@ -126,6 +127,13 @@ public function inactive($id)
     }
     return back();
 }
-}
 
-    
+public function acceptedDiscountAffiliation(User $user, Request $request)
+{
+    $user->accept_affiliates = $request->has('accept_affiliates');
+    $user->save();
+
+    // Redirige de vuelta con un mensaje de éxito
+    return back()->with('status', 'Preferencia de descuentos a afiliados actualizada.');
+}
+}

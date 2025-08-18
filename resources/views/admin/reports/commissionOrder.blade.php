@@ -2,7 +2,7 @@
 
 @section('content')
 <section class="content-header">
-    <h1>Reporte de Órdenes para Comisión</h1>
+    <h1>Reporte de Órdenes (Farmacias)</h1>
 </section>
 
 <section class="content">
