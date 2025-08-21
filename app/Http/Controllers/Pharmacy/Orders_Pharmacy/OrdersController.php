@@ -114,85 +114,6 @@ class OrdersController extends Controller
         ));
     }
 
-    //Funciones de create y store son unicamente para pruebas 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // Pasar opciones de Enums para los selects
-        $statusOptions = OrderStatus::getOptions();
-        $paymentMethodOptions = PaymentMethod::getOptions();
-        $shippingRequiredOptions = ShippingRequired::getOptions();
-
-        return view('pharmacy.requests-orders.create', compact(
-            'statusOptions',
-            'paymentMethodOptions',
-            'shippingRequiredOptions'
-        ));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'consecutive' => 'required|string|max:255',
-            'pharmacy_id' => 'required|exists:pharmacies,id',
-            'user_id' => 'required|exists:users,id',
-            'date' => 'required|date',
-            'status' => 'required|string|max:50',
-            'payment_method' => 'required|boolean',
-            'requires_shipping' => 'required|boolean',
-            'address' => 'nullable|string',
-            'lat' => 'nullable|numeric',
-            'lot' => 'nullable|numeric',
-            'order_total' => 'required|numeric',
-            'shipping_total' => 'required|numeric',
-            'shipping_cost' => 'nullable|numeric',
-            'voucher' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        // Manejar subida de voucher/comprobante
-        if ($request->hasFile('voucher')) {
-            $file = $request->file('voucher');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/vouchers', $fileName);
-            $validated['voucher'] = 'vouchers/' . $fileName;
-        }
-
-        $order = Orders::create($validated);
-
-
-        // Crear detalles de la orden si existen
-        if ($request->has('details')) {
-            foreach ($request->input('details') as $detail) {
-                if (!empty($detail['drug_id']) && !empty($detail['requested_amount'])) {
-                    OrderDetail::create([
-                        'order_id' => $order->id,
-                        'drug_id' => $detail['drug_id'],
-                        'requested_amount' => $detail['requested_amount'],
-                        'quantity_available' => $detail['quantity_available'] ?? 0,
-                        'unit_price' => $detail['unit_price'] ?? 0,
-                        'iva_percentage' => $detail['iva_percentage'] ?? 0,
-                        'products_total' => ($detail['quantity_available'] ?? 0) * ($detail['unit_price'] ?? 0),
-                    ]);
-                }
-            }
-        }
-
-        // Notificar a todos los usuarios de la farmacia sobre la nueva orden
-        $pharmacy = Pharmacy::with('users')->find($validated['pharmacy_id']);
-        if ($pharmacy && $pharmacy->users->count() > 0) {
-            foreach ($pharmacy->users as $pharmacyUser) {
-                $pharmacyUser->notify(new NewOrderPharmacie($order));
-            }
-        }
-
-        return redirect()->route('pharmacy.orders.create')->with('success', 'Orden creada exitosamente.');
-    }
-
     /**
      * Show the form for editing the specified resource.
      */
@@ -264,9 +185,20 @@ class OrdersController extends Controller
 
             // Calcular totales finales
             $productsTotal = $subtotalSinIva + $totalIva;
-            
-            // Preservar shipping_cost existente - no debe cambiar en update
-            $shippingCost = $order->shipping_cost ?? 0;
+
+            // Determinar shipping_cost: aceptar valor enviado si la orden requiere envío,
+            // si no se envía mantener el valor existente en la orden (o 0)
+            $shippingCost = 0;
+            if ($order->requiresShipping()) {
+                if (array_key_exists('shipping_cost', $validated) && $validated['shipping_cost'] !== null) {
+                    $shippingCost = floatval($validated['shipping_cost']);
+                } elseif ($request->filled('shipping_cost')) {
+                    $shippingCost = floatval($request->input('shipping_cost'));
+                } else {
+                    $shippingCost = $order->shipping_cost ?? 0;
+                }
+            }
+
             $finalTotal = $productsTotal + $shippingCost;
 
             // Actualizar la orden
@@ -308,48 +240,14 @@ class OrdersController extends Controller
         $order->load('details.drug');
         $notificationData = [
             'type' => 'order-update',
-            'order' => $order->toArray(),
+            /* Es mucha informacion para enviarla en la notificacion
+            'order' => $order->toArray(), 
             'orderDetails' => $order->details->toArray()
+            */
         ];
-        SendAppNotificationJob::dispatch('Estado de orden actualizado', "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.", [$user->push_token], $notificationData)->afterCommit();
-        /*$this->sendNotification(
-            $user->push_token,
-            'Estado de orden actualizado',
-            "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.",
-            $notificationData
-        );*/
-        
-    }
-
-    /**
-     * Enviar notificación push a OneSignal
-     */
-    private function sendNotification($playerId, $title, $message, $data = null)
-    {
-        if (!$playerId) return;
-
-        try {
-            $payload = [
-                'app_id' => env('ONESIGNAL_APP_ID'),
-                'headings' => ['en' => $title],
-                'contents' => ['en' => $message],
-                'include_player_ids' => [$playerId],
-                'target_channel' => "push"
-            ];
-
-            if ($data) {
-                $payload['data'] = $data;
-            }
-
-            Http::withHeaders([
-                'Authorization' => 'Basic ' . config('services.onesignal.api_key'),
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ])->post(config('services.onesignal.url_api', 'https://onesignal.com/api/v1/notifications'), $payload);
-
-        } catch (Exception $e) {
-            Log::error("Error enviando notificación OneSignal: " . $e->getMessage());
-        }
+        SendAppNotificationJob::dispatch('Estado de orden actualizado', 
+        "El estado de tu orden #{$order->consecutive} ha cambiado a {$statusText}.", 
+        [$user->push_token], $notificationData)->afterCommit();
     }
 
     /**
@@ -371,9 +269,10 @@ class OrdersController extends Controller
             'details.*.quantity_available' => 'required|numeric|min:0',
             'details.*.unit_price' => 'required|numeric|min:0',
             'details.*.iva_percentage' => 'required|numeric|min:0|max:100',
+            'shipping_cost' => 'nullable|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request, $order) {
+    DB::transaction(function () use ($request, $order, $validated) {
             $subtotalSinIva = 0;
             $totalIva = 0;
 
@@ -406,20 +305,31 @@ class OrdersController extends Controller
             // Calcular totales finales
             $productsTotal = $subtotalSinIva + $totalIva;
 
+            // Determinar shipping_cost si fue enviado (ej. al preparar cotización)
+            $shippingCost = 0;
+            if ($order->requiresShipping()) {
+                if (array_key_exists('shipping_cost', $validated) && $validated['shipping_cost'] !== null) {
+                    $shippingCost = floatval($validated['shipping_cost']);
+                } elseif ($request->filled('shipping_cost')) {
+                    $shippingCost = floatval($request->input('shipping_cost'));
+                }
+            }
+
             // Actualizar la orden y cambiar estado automáticamente
             $order->update([
                 'status' => OrderStatus::ESPERANDO_CONFIRMACION,
                 'products_subtotal' => $subtotalSinIva,     // Subtotal sin IVA
                 'iva_total' => $totalIva,                   // Total de IVA
                 'products_total' => $productsTotal,         // Total productos con IVA
-                'shipping_cost' => 0,                       // Sin shipping aún
-                'order_total' => $productsTotal,            // Solo productos por ahora
-                'shipping_total' => $productsTotal,         // Sin shipping aún
+                'shipping_cost' => $shippingCost,           // Puede ser 0 o el enviado
+                'order_total' => $productsTotal + $shippingCost,            // Productos + envío
+                'shipping_total' => $productsTotal + $shippingCost,         // Total con envío
             ]);
         });
 
         // Disparar evento de actualización de orden
         PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+        $this->sendPushNotification($order);
 
         return redirect()->route('pharmacy.orders.index')->with('success', 'Cotización enviada exitosamente.');
     }
@@ -465,6 +375,7 @@ class OrdersController extends Controller
 
             // Disparar evento de actualización de orden
             PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+            $this->sendPushNotification($order);
 
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Pago confirmado. La orden está ahora en preparación.');
         } catch (\Exception $e) {
@@ -489,6 +400,7 @@ class OrdersController extends Controller
 
             // Disparar evento de actualización de orden
             PharmacyOrderUpdate::dispatch(Auth::user(), $order);
+            $this->sendPushNotification($order);
 
             return redirect()->route('pharmacy.orders.edit', $order)->with('success', 'Orden marcada como despachada exitosamente.');
         } catch (\Exception $e) {
