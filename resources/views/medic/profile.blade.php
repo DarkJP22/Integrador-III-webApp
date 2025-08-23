@@ -33,6 +33,7 @@
                         <li class="{{ isset($tab) ? ($tab == 'reviews' ? 'active' : '') : '' }}"><a href="#reviews" data-toggle="tab">Comentarios</a></li>
                         <li class="{{ isset($tab) ? ($tab == 'payments' ? 'active' : '') : '' }}"><a href="#payments" data-toggle="tab">Tus Facturas (Subscripción)</a></li>
                         <li class="{{ isset($tab) ? ($tab == 'discounts' ? 'active' : '') : '' }}"><a href="#discounts" data-toggle="tab">Descuentos Emp.</a></li>
+                           <li class="{{ isset($tab) ? ($tab == 'acceptAffiliates' ? 'active' : '') : '' }}"><a href="#acceptAffiliates" data-toggle="tab">Atención a Afiliados</a></li>
                     </ul>
                     <div class="tab-content">
                         <div class="{{ isset($tab) ? ($tab == 'profile' ? 'active' : '') : 'active' }} tab-pane" id="profile">
@@ -64,6 +65,11 @@
                             <discounts></discounts>
 
                         </div>
+                            <!-- Inicio de modificación grupo G1 para aceptar afiliaciones  -->
+                    <div class="{{ isset($tab) ? ($tab == 'acceptAffiliates' ? 'active' : '') : '' }} tab-pane" id="acceptAffiliates">
+                        @include('pharmacy._AcceptAffiliationUserPatient', ['profileUser' => auth()->user()])
+                    </div>
+                      <!-- Fin de modificación grupo G1 para aceptar afiliaciones  -->
 
                         <!-- /.tab-pane -->
                     </div>

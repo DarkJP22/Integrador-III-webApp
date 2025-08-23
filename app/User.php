@@ -36,28 +36,8 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name',
-        'email',
-        'avatar_path',
-        'password',
-        'api_token',
-        'speciality_id',
-        'active',
-        'phone_number',
-        'phone_country_code',
-        'commission',
-        'medic_code',
-        'ide',
-        'push_token',
-        'fe',
-        'available_expedient',
-        'available_expedient_date',
-        'authorization_expedient_code',
-        'accumulated_affiliation',
-        'current_role_id',
-        'changed_password',
-        'disabled_by_payment',
-        'type_of_health_professional'
+
+        'name', 'email', 'avatar_path', 'password', 'api_token', 'speciality_id', 'active', 'phone_number', 'phone_country_code', 'commission', 'medic_code', 'ide', 'push_token', 'fe', 'available_expedient', 'available_expedient_date', 'authorization_expedient_code', 'accumulated_affiliation', 'current_role_id', 'changed_password', 'disabled_by_payment', 'type_of_health_professional','accept_affiliates'
     ];
     protected $appends = ['fullPhone'];
     /**
@@ -76,6 +56,7 @@ class User extends Authenticatable
     protected $casts = [
         'type_of_health_professional' => TypeOfHealthProfessional::class,
         'social_profile_fields' => AsArrayObject::class,
+        'accept_affiliates' => 'boolean',
     ];
 
     public static function byPhone($phone, $code, $email = null): User

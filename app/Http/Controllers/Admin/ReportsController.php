@@ -15,6 +15,11 @@ use App\Plan;
 use App\Appointment;
 use App\Office;
 use App\Patient;
+use App\Pharmacy;
+use App\Orders;
+use Carbon\CarbonPeriod; //Modificación de Grupo G1 Genera un rancgo de fechas para recorrerlas 
+use Illuminate\Support\Facades\Log; //Modificación de Grupo G1 para registrar los reportes generados
+use Phar;
 
 class ReportsController extends Controller
 {
@@ -544,6 +549,95 @@ class ReportsController extends Controller
 
 
     }
+  // Inicio de modificaciones de grupo G1
+    //////////////////////////////////////// Reporte de ordenes por comisión Admin////////////////////////////////
+public function index()
+{
+    // Traer todas las órdenes despachadas
+    $orders = Orders::with('user', 'pharmacy')
+                    ->where('status', 'despachado')
+                    ->get();
 
+    $report = collect([]);
+    $totales = [
+        'TotalOrdenes' => 0,
+        'TotalComision' => 0,
+    ];
+
+    foreach ($orders as $order) {
+        $totalComision = $order->order_total * 0.05; // 5% de comisión
+
+        $report[] = (object)[
+            'consecutive' => $order->consecutive,
+            'date' => $order->date->format('Y-m-d'),
+            'user_name' => $order->user->name ?? 'Sin usuario',
+            'pharmacy_name' => $order->pharmacy->name ?? 'Sin farmacia',
+            'TotalOrdenes' => $order->order_total,
+            'TotalComision' => $totalComision,
+            'voucher' => $order->voucher
+        ];
+
+        $totales['TotalOrdenes'] += $order->order_total;
+        $totales['TotalComision'] += $totalComision;
+    }
+
+    return view('admin.reports.commissionOrder', compact('report', 'totales'));
+}
+public function show($id)
+    {
+        $order = Orders::with('user', 'pharmacy', 'details')->where('consecutive', $id)->firstOrFail();
+        return view('admin.reports.commissionOrderShow', compact('order'));
+    }
+
+public function searchByFilter(Request $request)
+{
+    $query = Orders::with('user', 'pharmacy')
+                   ->where('status', 'despachado');
+
+    if ($request->filled('start')) {
+        $query->whereDate('created_at', '>=', $request->start);
+    }
+
+    if ($request->filled('end')) {
+        $query->whereDate('created_at', '<=', $request->end);
+    }
+   if ($request->filled('user')) {
+    $pharmacyIds = Pharmacy::where('user_id', $request->user)->pluck('id');
+    $query->whereIn('pharmacy_id', $pharmacyIds);
+}
+
+    $orders = $query->get();
+
+    $report = collect([]);
+    $totales = [
+        'TotalOrdenes' => 0,
+        'TotalComision' => 0,
+    ];
+
+    foreach ($orders as $order) {
+        $totalComision = $order->order_total * 0.05;
+
+        $report[] = (object)[
+            'consecutive' => $order->consecutive,
+            'date' => $order->date->format('Y-m-d'),
+            'user_name' => $order->user->name ?? 'Sin usuario',
+            'pharmacy_name' => $order->pharmacy->name ?? 'Sin farmacia',
+            'TotalOrdenes' => $order->order_total,
+            'TotalComision' => $totalComision,
+            'voucher' => $order->voucher
+        ];
+
+        $totales['TotalOrdenes'] += $order->order_total;
+        $totales['TotalComision'] += $totalComision;
+    }
+       Log::info('Reporte de órdenes por comisión', [
+        'report' => $report,
+        'totales' => $totales,
+        'filters' => $request->all()
+    ]);
+    return view('admin.reports.commissionOrder', compact('report', 'totales', 'request'));
+}
+
+// Fin de modificaciones de grupo G1
 
 }

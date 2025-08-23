@@ -40,6 +40,7 @@
 {{--                    <li><a href="{{ url('/admin/clinics') }}"><i class="fa fa-circle-o"></i> Clínicas</a></li>--}}
 {{--                    <li><a href="{{ url('/admin/patients') }}"><i class="fa fa-circle-o"></i> Pacientes</a></li>--}}
                     <li><a href="{{ url('/admin/appointments') }}"><i class="fa fa-circle-o"></i> Citas Reservadas</a></li>
+                    <li><a href="{{ url('/admin/reportsCommission') }}"><i class="fa fa-circle-o"></i> Reporte de Órdenes</a></li>
                     <li><a href="{{ url('/admin/annual-performance') }}"><i class="fa fa-circle-o"></i> Comportamiento Anual</a></li>
 
 

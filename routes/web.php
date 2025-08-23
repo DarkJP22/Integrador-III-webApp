@@ -732,6 +732,7 @@ foreach (['active', 'inactive'] as $key) {
 
 }
 Route::get('admin/affiliations/request/affiliate/state', 'Admin\AffiliationRequestController@showToState');
+Route::post('pharmacy/affiliations/request/affiliate/{user}/accepted-discount', 'Admin\AffiliationRequestController@acceptedDiscountAffiliation');
 //Fin de la modificación de ruta para ver las afiliaciones de los usuarios Grupo G1
 Route::put('/admin/users/{user}/changeaccountcentromedico', 'Admin\UserController@changeAccountCentroMedico');
 Route::delete('/admin/users/{user}/cancel-account', 'Admin\UserController@cancelAccount');
@@ -771,6 +772,9 @@ Route::get('/admin/medics', 'Admin\ReportsController@medics');
 Route::get('/admin/clinics', 'Admin\ReportsController@clinics');
 Route::get('/admin/patients', 'Admin\ReportsController@patients');
 Route::get('/admin/appointments', 'Admin\ReportsController@appointments');
+Route::get('/admin/reportsCommission/filter', 'Admin\ReportsController@searchByFilter');// Reporte por filtros  ordenes Comisiones grupo G1
+Route::get('/admin/reportsCommission', 'Admin\ReportsController@index'); // Reporte por ordenes Comisiones grupo G1
+Route::get('/admin/reportsCommission/{id}', 'Admin\ReportsController@show'); // Reporte por id  ordenes Comisiones grupo G1
 Route::get('/admin/annual-performance', 'Admin\ReportsController@annualPerformance');
 
 Route::post('/users/{user}/hacienda/conexion', 'HaciendaController@authToken');
