@@ -36,7 +36,6 @@ class CreateUsersTable extends Migration
             $table->string('ide')->nullable();
             $table->tinyInteger('fe')->default(0); //utiliza factura electronica
             $table->string('push_token')->nullable();
-            $table->boolean('accept_affiliates')->default(0); //si permitir el envio de notificaciones push
             $table->tinyInteger('pharmacy_notifications')->default(1); //si permitir el envio de notificaciones push
             $table->tinyInteger('clinic_notifications')->default(1); //si permitir el envio de notificaciones push
             $table->rememberToken();
